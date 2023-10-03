@@ -1,8 +1,8 @@
-const ethers = require("ethers");
-const fetch = (...args) =>
-  import("node-fetch").then(({ default: fetch }) => fetch(...args));
-const Big = require("big.js");
-require("dotenv").config();
+import { ethers } from "ethers";
+import axios from "axios";
+import Big from "big.js";
+import dotenv from "dotenv";
+dotenv.config();
 
 const provider = new ethers.WebSocketProvider(
   `wss://eth-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`
@@ -18,27 +18,28 @@ const uniswapV3PoolContract = new ethers.Contract(
   provider
 );
 
-const getPoolPrice = async () => {
+const getPoolPrice = async (): Promise<number> => {
   const slot0 = await uniswapV3PoolContract.slot0();
   const sqrtRatioX96 = slot0.sqrtPriceX96.toString();
   const price = sqrtRatioX96 ** 2 / 2 ** 192;
   return price;
 };
 
-const getPriceInUSD = (priceIn18Decimals) => {
+const getPriceInUSD = (priceIn18Decimals: number): Big => {
   // const price10 = priceIn18Decimals / 10 ** 18 in Big
   const price10 = new Big(priceIn18Decimals).div(Big(10).pow(18));
   const price01 = price10.pow(-1).mul(Big(10).pow(-6));
   return price01;
 };
 
-const getEthPrice = async () => {
-  const ethPrice = await fetch(
+const getEthPrice = async (): Promise<number> => {
+  const ethPriceResponse = await axios.get(
     "https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd"
-  )
-    .then((res) => res.json())
-    .then((json) => json.ethereum.usd);
-  return ethPrice;
+  );
+  const ethPriceData = ethPriceResponse.data as {
+    ethereum: { usd: number };
+  };
+  return ethPriceData.ethereum.usd;
 };
 
 const init = async () => {
@@ -67,14 +68,20 @@ const main = async () => {
   process.stdin.resume();
 
   // handle exit signals
-  const exitHandler = async (signal) => {
+  const exitHandler = async (signal:any) => {
     if (signal) {
       console.log(`Received ${signal}.`);
     }
     console.log("Exiting...");
     process.exit(0);
   };
-  process.abort = exitHandler;
+
+  // handle ctrl+c event
+  process.on("SIGINT", exitHandler);
+
+  // handle kill
+  process.on("SIGTERM", exitHandler);
+
 };
 
 main();
