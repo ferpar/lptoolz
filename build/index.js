@@ -21,7 +21,11 @@ const provider = new ethers_1.ethers.WebSocketProvider(`wss://eth-mainnet.g.alch
 // pool for uscd/eth at 0.05% fee tier
 const UniV3PoolAddress = "0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640";
 const uniswapV3PoolAbi = require("@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json");
+// non fungible position manager
+const nonFungiblePositionManagerAddress = "0xC36442b4a4522E871399CD717aBDD847Ab11FE88";
+const nonFungiblePositionManagerAbi = require("@uniswap/v3-periphery/artifacts/contracts/interfaces/INonfungiblePositionManager.sol/INonfungiblePositionManager.json");
 const uniswapV3PoolContract = new ethers_1.ethers.Contract(UniV3PoolAddress, uniswapV3PoolAbi.abi, provider);
+const nonFungiblePositionManagerContract = new ethers_1.ethers.Contract(nonFungiblePositionManagerAddress, nonFungiblePositionManagerAbi.abi, provider);
 const getPoolPrice = () => __awaiter(void 0, void 0, void 0, function* () {
     const slot0 = yield uniswapV3PoolContract.slot0();
     const sqrtRatioX96 = slot0.sqrtPriceX96.toString();
@@ -39,6 +43,24 @@ const getEthPrice = () => __awaiter(void 0, void 0, void 0, function* () {
     const ethPriceData = ethPriceResponse.data;
     return ethPriceData.ethereum.usd;
 });
+const getPositionTicks = () => __awaiter(void 0, void 0, void 0, function* () {
+    const position = yield nonFungiblePositionManagerContract.positions(1);
+    const tickLower = position.tickLower.toString();
+    const tickUpper = position.tickUpper.toString();
+    return { tickLower, tickUpper };
+});
+const tickToPrice = (tick) => {
+    const step1 = Math.pow(1.0001, parseInt(tick));
+    const step2 = new big_js_1.default(step1).times(1e-6);
+    const price = new big_js_1.default(1).div(step2);
+    return price;
+};
+const getPoolPriceFromTicks = () => __awaiter(void 0, void 0, void 0, function* () {
+    const { tickLower, tickUpper } = yield getPositionTicks();
+    const priceLower = tickToPrice(tickLower);
+    const priceUpper = tickToPrice(tickUpper);
+    return [Number(priceLower), Number(priceUpper)];
+});
 const init = () => __awaiter(void 0, void 0, void 0, function* () {
     // trigger getPoolPrice on swap event
     uniswapV3PoolContract.on("Swap", (sender, amount0, amount1, data) => __awaiter(void 0, void 0, void 0, function* () {
@@ -48,6 +70,8 @@ const init = () => __awaiter(void 0, void 0, void 0, function* () {
         console.log(`ETH price: ${price}`);
         console.log(`Pool price: ${poolPrice}`);
         console.log(`Pool price local: ${price2}`);
+        const poolPriceFromTicks = yield getPoolPriceFromTicks();
+        console.log(`Pool price from ticks: ${poolPriceFromTicks[0]} - ${poolPriceFromTicks[1]}`);
     }));
 });
 const main = () => __awaiter(void 0, void 0, void 0, function* () {
@@ -75,4 +99,6 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
     // handle kill
     process.on("SIGTERM", exitHandler);
 });
-main();
+(() => __awaiter(void 0, void 0, void 0, function* () {
+    yield main();
+}))();

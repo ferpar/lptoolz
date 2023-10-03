@@ -12,9 +12,19 @@ const provider = new ethers.WebSocketProvider(
 const UniV3PoolAddress = "0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640";
 const uniswapV3PoolAbi = require("@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json");
 
+// non fungible position manager
+const nonFungiblePositionManagerAddress = "0xC36442b4a4522E871399CD717aBDD847Ab11FE88"
+const nonFungiblePositionManagerAbi = require("@uniswap/v3-periphery/artifacts/contracts/interfaces/INonfungiblePositionManager.sol/INonfungiblePositionManager.json");
+
 const uniswapV3PoolContract = new ethers.Contract(
   UniV3PoolAddress,
   uniswapV3PoolAbi.abi,
+  provider
+);
+
+const nonFungiblePositionManagerContract = new ethers.Contract(
+  nonFungiblePositionManagerAddress,
+  nonFungiblePositionManagerAbi.abi,
   provider
 );
 
@@ -42,6 +52,13 @@ const getEthPrice = async (): Promise<number> => {
   return ethPriceData.ethereum.usd;
 };
 
+const getPositionTicks = async () => {
+  const position = await nonFungiblePositionManagerContract.positions(1);
+  const tickLower = position.tickLower.toString();
+  const tickUpper = position.tickUpper.toString();
+  return { tickLower, tickUpper };
+}
+
 const init = async () => {
   // trigger getPoolPrice on swap event
   uniswapV3PoolContract.on("Swap", async (sender, amount0, amount1, data) => {
@@ -54,7 +71,7 @@ const init = async () => {
   });
 };
 
-const main = async () => {
+const main = async (): Promise<void> => {
   console.log("Starting...");
   await init();
   const poolPrice = await getPoolPrice();
@@ -68,7 +85,7 @@ const main = async () => {
   process.stdin.resume();
 
   // handle exit signals
-  const exitHandler = async (signal:any) => {
+  const exitHandler = async (signal:any): Promise<void> => {
     if (signal) {
       console.log(`Received ${signal}.`);
     }
@@ -84,4 +101,6 @@ const main = async () => {
 
 };
 
-main();
+(async () => {
+  await main();
+})()
