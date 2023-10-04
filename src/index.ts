@@ -16,6 +16,9 @@ const uniswapV3PoolAbi = require("@uniswap/v3-core/artifacts/contracts/interface
 const nonFungiblePositionManagerAddress = "0xC36442b4a4522E871399CD717aBDD847Ab11FE88"
 const nonFungiblePositionManagerAbi = require("@uniswap/v3-periphery/artifacts/contracts/interfaces/INonfungiblePositionManager.sol/INonfungiblePositionManager.json");
 
+// get contract for erc20
+const erc20Abi= require("@uniswap/v3-periphery/artifacts/contracts/interfaces/IERC20Metadata.sol/IERC20Metadata.json")
+
 const uniswapV3PoolContract = new ethers.Contract(
   UniV3PoolAddress,
   uniswapV3PoolAbi.abi,
@@ -28,10 +31,10 @@ const nonFungiblePositionManagerContract = new ethers.Contract(
   provider
 );
 
-const getPoolPrice = async (): Promise<number> => {
+const getPoolPrice = async (): Promise<Big> => {
   const slot0 = await uniswapV3PoolContract.slot0();
   const sqrtRatioX96 = slot0.sqrtPriceX96.toString();
-  const price = sqrtRatioX96 ** 2 / 2 ** 192;
+  const price = new Big(sqrtRatioX96).pow(2).div(2 ** 192);
   return price;
 };
 
@@ -41,13 +44,13 @@ const getDecimals = async (): Promise<number[]> => {
 
   const token0Contract = new ethers.Contract(
     token0address,
-    uniswapV3PoolAbi.abi,
+    erc20Abi.abi, 
     provider
   );
 
   const token1Contract = new ethers.Contract(
     token1address,
-    uniswapV3PoolAbi.abi,
+    erc20Abi.abi,
     provider
   );
 
@@ -57,20 +60,14 @@ const getDecimals = async (): Promise<number[]> => {
   return [ token0Decimals, token1Decimals ]
 }
 
-const getInvertedPrice = async (price:number): Promise<number> => {
+const getInvertedPrice = async (price:Big): Promise<Big> => {
   // consider the decimals of each token
   const [ token0Decimals, token1Decimals ] = await getDecimals();
-  const decimalsDifference = token0Decimals - token1Decimals;
-  const invertedPrice = price ** decimalsDifference;
+  const decimalsDifference = Number(token1Decimals - token0Decimals);
+  const invertedPrice = price.pow(-1).mul(Big(10).pow(decimalsDifference))
   return invertedPrice;
 }
 
-const getPriceInUSD = (priceIn18Decimals: number): Big => {
-  // const price10 = priceIn18Decimals / 10 ** 18 in Big
-  const price10 = new Big(priceIn18Decimals).div(Big(10).pow(18));
-  const price01 = price10.pow(-1).mul(Big(10).pow(-6));
-  return price01;
-};
 
 const getEthPrice = async (): Promise<number> => {
   const ethPriceResponse = await axios.get(
@@ -100,8 +97,8 @@ const init = async () => {
     const poolPrice = await getPoolPrice();
     const invertedPoolPrice = await getInvertedPrice(poolPrice);
     const price = await getEthPrice();
-    console.log(`Pool price: ${poolPrice}`);
-    console.log(`inverted Pool price ${invertedPoolPrice}`);
+    console.log(`Pool price: ${Number(poolPrice)}`);
+    console.log(`inverted Pool price ${Number(invertedPoolPrice)}`);
     console.log(`ETH price: ${price}`);
   });
 };
@@ -112,8 +109,8 @@ const main = async (): Promise<void> => {
   const poolPrice = await getPoolPrice();
     const invertedPoolPrice = await getInvertedPrice(poolPrice);
   const price = await getEthPrice();
-  console.log(`Pool price: ${poolPrice}`);
-    console.log(`inverted Pool price ${invertedPoolPrice}`);
+  console.log(`Pool price: ${Number(poolPrice)}`);
+    console.log(`inverted Pool price ${Number(invertedPoolPrice)}`);
   console.log(`ETH price: ${price}`);
   console.log("initialized successfully");
   // do not close the process
