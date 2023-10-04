@@ -35,6 +35,36 @@ const getPoolPrice = async (): Promise<number> => {
   return price;
 };
 
+const getDecimals = async (): Promise<number[]> => {
+  const token0address = await uniswapV3PoolContract.token0();
+  const token1address = await uniswapV3PoolContract.token1();
+
+  const token0Contract = new ethers.Contract(
+    token0address,
+    uniswapV3PoolAbi.abi,
+    provider
+  );
+
+  const token1Contract = new ethers.Contract(
+    token1address,
+    uniswapV3PoolAbi.abi,
+    provider
+  );
+
+  const token0Decimals = await token0Contract.decimals();
+  const token1Decimals = await token1Contract.decimals();
+
+  return [ token0Decimals, token1Decimals ]
+}
+
+const getInvertedPrice = async (price:number): Promise<number> => {
+  // consider the decimals of each token
+  const [ token0Decimals, token1Decimals ] = await getDecimals();
+  const decimalsDifference = token0Decimals - token1Decimals;
+  const invertedPrice = price ** decimalsDifference;
+  return invertedPrice;
+}
+
 const getPriceInUSD = (priceIn18Decimals: number): Big => {
   // const price10 = priceIn18Decimals / 10 ** 18 in Big
   const price10 = new Big(priceIn18Decimals).div(Big(10).pow(18));
@@ -59,15 +89,20 @@ const getPositionTicks = async () => {
   return { tickLower, tickUpper };
 }
 
+const tickToPrice = (tick: string) => {
+  const price = Math.pow(1.0001, parseInt(tick));
+  return price;
+}
+
 const init = async () => {
   // trigger getPoolPrice on swap event
   uniswapV3PoolContract.on("Swap", async (sender, amount0, amount1, data) => {
     const poolPrice = await getPoolPrice();
+    const invertedPoolPrice = await getInvertedPrice(poolPrice);
     const price = await getEthPrice();
-    const price2 = getPriceInUSD(poolPrice);
-    console.log(`ETH price: ${price}`);
     console.log(`Pool price: ${poolPrice}`);
-    console.log(`Pool price local: ${price2}`);
+    console.log(`inverted Pool price ${invertedPoolPrice}`);
+    console.log(`ETH price: ${price}`);
   });
 };
 
@@ -75,11 +110,11 @@ const main = async (): Promise<void> => {
   console.log("Starting...");
   await init();
   const poolPrice = await getPoolPrice();
+    const invertedPoolPrice = await getInvertedPrice(poolPrice);
   const price = await getEthPrice();
-  const price2 = getPriceInUSD(poolPrice);
   console.log(`Pool price: ${poolPrice}`);
+    console.log(`inverted Pool price ${invertedPoolPrice}`);
   console.log(`ETH price: ${price}`);
-  console.log(`Pool price local: ${price2}`);
   console.log("initialized successfully");
   // do not close the process
   process.stdin.resume();
