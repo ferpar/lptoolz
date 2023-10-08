@@ -13,11 +13,12 @@ const UniV3PoolAddress = "0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640";
 const uniswapV3PoolAbi = require("@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json");
 
 // non fungible position manager
-const nonFungiblePositionManagerAddress = "0xC36442b4a4522E871399CD717aBDD847Ab11FE88"
+const nonFungiblePositionManagerAddress =
+  "0xC36442b4a4522E871399CD717aBDD847Ab11FE88";
 const nonFungiblePositionManagerAbi = require("@uniswap/v3-periphery/artifacts/contracts/interfaces/INonfungiblePositionManager.sol/INonfungiblePositionManager.json");
 
 // get contract for erc20
-const erc20Abi= require("@uniswap/v3-periphery/artifacts/contracts/interfaces/IERC20Metadata.sol/IERC20Metadata.json")
+const erc20Abi = require("@uniswap/v3-periphery/artifacts/contracts/interfaces/IERC20Metadata.sol/IERC20Metadata.json");
 
 const uniswapV3PoolContract = new ethers.Contract(
   UniV3PoolAddress,
@@ -44,7 +45,7 @@ const getDecimals = async (): Promise<number[]> => {
 
   const token0Contract = new ethers.Contract(
     token0address,
-    erc20Abi.abi, 
+    erc20Abi.abi,
     provider
   );
 
@@ -57,17 +58,16 @@ const getDecimals = async (): Promise<number[]> => {
   const token0Decimals = await token0Contract.decimals();
   const token1Decimals = await token1Contract.decimals();
 
-  return [ token0Decimals, token1Decimals ]
-}
+  return [token0Decimals, token1Decimals];
+};
 
-const getInvertedPrice = async (price:Big): Promise<Big> => {
+const getInvertedPrice = async (price: Big): Promise<Big> => {
   // consider the decimals of each token
-  const [ token0Decimals, token1Decimals ] = await getDecimals();
+  const [token0Decimals, token1Decimals] = await getDecimals();
   const decimalsDifference = Number(token1Decimals - token0Decimals);
-  const invertedPrice = price.pow(-1).mul(Big(10).pow(decimalsDifference))
+  const invertedPrice = price.pow(-1).mul(Big(10).pow(decimalsDifference));
   return invertedPrice;
-}
-
+};
 
 const getEthPrice = async (): Promise<number> => {
   const ethPriceResponse = await axios.get(
@@ -80,16 +80,16 @@ const getEthPrice = async (): Promise<number> => {
 };
 
 const getPositionTicks = async () => {
-  const position = await nonFungiblePositionManagerContract.positions(1);
+  const position = await nonFungiblePositionManagerContract.positions(574861);
   const tickLower = position.tickLower.toString();
   const tickUpper = position.tickUpper.toString();
   return { tickLower, tickUpper };
-}
+};
 
-const tickToPrice = (tick: string) => {
+const tickToPrice = (tick: string): number => {
   const price = Math.pow(1.0001, parseInt(tick));
   return price;
-}
+};
 
 const init = async () => {
   // trigger getPoolPrice on swap event
@@ -100,6 +100,15 @@ const init = async () => {
     console.log(`Pool price: ${Number(poolPrice)}`);
     console.log(`inverted Pool price ${Number(invertedPoolPrice)}`);
     console.log(`ETH price: ${price}`);
+    const { tickLower, tickUpper } = await getPositionTicks();
+    const lowerPrice = tickToPrice(tickLower);
+    const upperPrice = tickToPrice(tickUpper);
+    console.log(`lower price: ${lowerPrice}`);
+    console.log(`upper price: ${upperPrice}`);
+    const token1PriceLower = await getInvertedPrice(Big(lowerPrice))
+    const token1PriceUpper = await getInvertedPrice(Big(upperPrice))
+    console.log(`token1 price lower: ${token1PriceLower}`)
+    console.log(`token1 price upper: ${token1PriceUpper}`)
   });
 };
 
@@ -107,17 +116,26 @@ const main = async (): Promise<void> => {
   console.log("Starting...");
   await init();
   const poolPrice = await getPoolPrice();
-    const invertedPoolPrice = await getInvertedPrice(poolPrice);
+  const invertedPoolPrice = await getInvertedPrice(poolPrice);
   const price = await getEthPrice();
   console.log(`Pool price: ${Number(poolPrice)}`);
-    console.log(`inverted Pool price ${Number(invertedPoolPrice)}`);
+  console.log(`inverted Pool price ${Number(invertedPoolPrice)}`);
   console.log(`ETH price: ${price}`);
+  const { tickLower, tickUpper } = await getPositionTicks();
+  const lowerPrice = tickToPrice(tickLower);
+  const upperPrice = tickToPrice(tickUpper);
+  console.log(`lower price: ${lowerPrice}`);
+  console.log(`upper price: ${upperPrice}`);
+    const token1PriceLower = await getInvertedPrice(Big(lowerPrice))
+    const token1PriceUpper = await getInvertedPrice(Big(upperPrice))
+    console.log(`token1 price lower: ${token1PriceLower}`)
+    console.log(`token1 price upper: ${token1PriceUpper}`)
   console.log("initialized successfully");
   // do not close the process
   process.stdin.resume();
 
   // handle exit signals
-  const exitHandler = async (signal:any): Promise<void> => {
+  const exitHandler = async (signal: any): Promise<void> => {
     if (signal) {
       console.log(`Received ${signal}.`);
     }
@@ -130,9 +148,8 @@ const main = async (): Promise<void> => {
 
   // handle kill
   process.on("SIGTERM", exitHandler);
-
 };
 
 (async () => {
   await main();
-})()
+})();
