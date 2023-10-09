@@ -2,19 +2,29 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import { uniswapV3PoolContract } from "./domain/contracts";
-import { printData } from "./domain/PriceOracle";
+import PoolStopLoss from "./domain/poolStopLoss";
+
+const fractionToBottom = -0.8
+const positionId = 574861
+
+const poolStopLoss = new PoolStopLoss(fractionToBottom, positionId);
+
+const routine = async () => {
+  poolStopLoss.check(true);
+};
 
 const init = async () => {
+  await poolStopLoss.init();
   // trigger getPoolPrice on swap event
   uniswapV3PoolContract.on("Swap", async (sender, amount0, amount1, data) => {
-    printData();
+    await routine();
   });
 };
 
 const main = async (): Promise<void> => {
   console.log("Starting...");
   await init();
-  printData();
+  await routine();
   console.log("initialized successfully");
   // do not close the process
   process.stdin.resume();

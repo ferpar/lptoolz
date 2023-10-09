@@ -39,9 +39,9 @@ export const getDecimals = async (): Promise<number[]> => {
 };
 
 // pool, and token contracts
-export const getInvertedPrice = async (price: Big): Promise<Big> => {
-  // consider the decimals of each token
-  const [token0Decimals, token1Decimals] = await getDecimals();
+export const getInvertedPrice = async (price: Big, decimals?:number[]): Promise<Big> => {
+  // consider the decimals of each token, dont call api if decimals are provided
+  const [token0Decimals, token1Decimals] = !decimals?.length ? await getDecimals() : decimals;
   const decimalsDifference = Number(token1Decimals - token0Decimals);
   const invertedPrice = price.pow(-1).mul(Big(10).pow(decimalsDifference));
   return invertedPrice;
