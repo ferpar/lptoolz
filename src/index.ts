@@ -91,30 +91,7 @@ const tickToPrice = (tick: string): number => {
   return price;
 };
 
-const init = async () => {
-  // trigger getPoolPrice on swap event
-  uniswapV3PoolContract.on("Swap", async (sender, amount0, amount1, data) => {
-    const poolPrice = await getPoolPrice();
-    const invertedPoolPrice = await getInvertedPrice(poolPrice);
-    const price = await getEthPrice();
-    console.log(`Pool price: ${Number(poolPrice)}`);
-    console.log(`inverted Pool price ${Number(invertedPoolPrice)}`);
-    console.log(`ETH price: ${price}`);
-    const { tickLower, tickUpper } = await getPositionTicks();
-    const lowerPrice = tickToPrice(tickLower);
-    const upperPrice = tickToPrice(tickUpper);
-    console.log(`lower price: ${lowerPrice}`);
-    console.log(`upper price: ${upperPrice}`);
-    const token1PriceLower = await getInvertedPrice(Big(lowerPrice))
-    const token1PriceUpper = await getInvertedPrice(Big(upperPrice))
-    console.log(`token1 price lower: ${token1PriceLower}`)
-    console.log(`token1 price upper: ${token1PriceUpper}`)
-  });
-};
-
-const main = async (): Promise<void> => {
-  console.log("Starting...");
-  await init();
+const printData = async () => {
   const poolPrice = await getPoolPrice();
   const invertedPoolPrice = await getInvertedPrice(poolPrice);
   const price = await getEthPrice();
@@ -126,10 +103,24 @@ const main = async (): Promise<void> => {
   const upperPrice = tickToPrice(tickUpper);
   console.log(`lower price: ${lowerPrice}`);
   console.log(`upper price: ${upperPrice}`);
-    const token1PriceLower = await getInvertedPrice(Big(lowerPrice))
-    const token1PriceUpper = await getInvertedPrice(Big(upperPrice))
-    console.log(`token1 price lower: ${token1PriceLower}`)
-    console.log(`token1 price upper: ${token1PriceUpper}`)
+  const token1PriceLower = await getInvertedPrice(Big(lowerPrice));
+  const token1PriceUpper = await getInvertedPrice(Big(upperPrice));
+  console.log(`token1 price lower: ${token1PriceLower}`);
+  console.log(`token1 price upper: ${token1PriceUpper}`);
+  return "done";
+};
+
+const init = async () => {
+  // trigger getPoolPrice on swap event
+  uniswapV3PoolContract.on("Swap", async (sender, amount0, amount1, data) => {
+    printData()
+  });
+};
+
+const main = async (): Promise<void> => {
+  console.log("Starting...");
+  await init();
+  printData()
   console.log("initialized successfully");
   // do not close the process
   process.stdin.resume();
