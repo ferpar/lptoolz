@@ -4,7 +4,7 @@ dotenv.config();
 import { uniswapV3PoolContract } from "./domain/contracts";
 import PoolStopLoss from "./domain/poolStopLoss";
 
-const fractionToBottom = -0.8
+const fractionToBottom = 0.75
 const positionId = 574861
 
 const poolStopLoss = new PoolStopLoss(fractionToBottom, positionId);
