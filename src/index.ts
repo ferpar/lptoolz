@@ -79,8 +79,8 @@ const getEthPrice = async (): Promise<number> => {
   return ethPriceData.ethereum.usd;
 };
 
-const getPositionTicks = async () => {
-  const position = await nonFungiblePositionManagerContract.positions(574861);
+const getPositionTicks = async (positionId: number) => {
+  const position = await nonFungiblePositionManagerContract.positions(positionId);
   const tickLower = position.tickLower.toString();
   const tickUpper = position.tickUpper.toString();
   return { tickLower, tickUpper };
@@ -98,7 +98,7 @@ const printData = async () => {
   console.log(`Pool price: ${Number(poolPrice)}`);
   console.log(`inverted Pool price ${Number(invertedPoolPrice)}`);
   console.log(`ETH price: ${price}`);
-  const { tickLower, tickUpper } = await getPositionTicks();
+  const { tickLower, tickUpper } = await getPositionTicks(574861);
   const lowerPrice = tickToPrice(tickLower);
   const upperPrice = tickToPrice(tickUpper);
   console.log(`lower price: ${lowerPrice}`);
