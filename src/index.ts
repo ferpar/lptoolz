@@ -113,14 +113,14 @@ const printData = async () => {
 const init = async () => {
   // trigger getPoolPrice on swap event
   uniswapV3PoolContract.on("Swap", async (sender, amount0, amount1, data) => {
-    printData()
+    printData();
   });
 };
 
 const main = async (): Promise<void> => {
   console.log("Starting...");
   await init();
-  printData()
+  printData();
   console.log("initialized successfully");
   // do not close the process
   process.stdin.resume();
