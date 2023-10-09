@@ -4,7 +4,8 @@
   "description": "toolkit for liquidity providers",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "npx tsc && node ./build/index.js"
   },
   "author": "Fernando Perez Ayala",
   "license": "ISC",
