@@ -26,7 +26,6 @@ const poolStopLoss = async (
   const fromUpperToLower = token1PriceUpper.minus(token1PriceLower);
   const stopLossPrice = token1PriceUpper.minus(fromUpperToLower.mul(fractionToBottom))
 
-  // return true if current price is below stop loss price
   if (verbose) {
     console.log(`Current price: ${price}`);
     console.log(`Lower price: ${token1PriceLower}`);
@@ -38,6 +37,8 @@ const poolStopLoss = async (
       `Current price is below stop loss price: ${price.lt(stopLossPrice)}`
     );
   }
+
+  // return true if current price is below stop loss price
   return price.lt(stopLossPrice);
 };
 
