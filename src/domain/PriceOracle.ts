@@ -4,8 +4,13 @@ import Big from "big.js";
 import dotenv from "dotenv";
 dotenv.config();
 
-import { provider, uniswapV3PoolContract, nonFungiblePositionManagerContract, erc20Abi } from "./contracts";
-
+import {
+  provider,
+  uniswapV3PoolContract,
+  nonFungiblePositionManagerContract,
+  erc20Abi,
+  getTokenContracts
+} from "./contracts";
 
 // pool contract
 export const getPoolPrice = async (): Promise<Big> => {
@@ -17,21 +22,8 @@ export const getPoolPrice = async (): Promise<Big> => {
 
 // pool and token contracts
 export const getDecimals = async (): Promise<number[]> => {
-  const token0address = await uniswapV3PoolContract.token0();
-  const token1address = await uniswapV3PoolContract.token1();
-
-  const token0Contract = new ethers.Contract(
-    token0address,
-    erc20Abi.abi,
-    provider
-  );
-
-  const token1Contract = new ethers.Contract(
-    token1address,
-    erc20Abi.abi,
-    provider
-  );
-
+  const [token0Contract, token1Contract] = await getTokenContracts();
+  
   const token0Decimals = await token0Contract.decimals();
   const token1Decimals = await token1Contract.decimals();
 
@@ -39,9 +31,14 @@ export const getDecimals = async (): Promise<number[]> => {
 };
 
 // pool, and token contracts
-export const getInvertedPrice = async (price: Big, decimals?:number[]): Promise<Big> => {
+export const getInvertedPrice = async (
+  price: Big,
+  decimals?: number[]
+): Promise<Big> => {
   // consider the decimals of each token, dont call api if decimals are provided
-  const [token0Decimals, token1Decimals] = !decimals?.length ? await getDecimals() : decimals;
+  const [token0Decimals, token1Decimals] = !decimals?.length
+    ? await getDecimals()
+    : decimals;
   const decimalsDifference = Number(token1Decimals - token0Decimals);
   const invertedPrice = price.pow(-1).mul(Big(10).pow(decimalsDifference));
   return invertedPrice;
@@ -60,7 +57,9 @@ export const getEthPrice = async (): Promise<number> => {
 
 // position manager contract
 export const getPositionTicks = async (positionId: number) => {
-  const position = await nonFungiblePositionManagerContract.positions(positionId);
+  const position = await nonFungiblePositionManagerContract.positions(
+    positionId
+  );
   const tickLower = position.tickLower.toString();
   const tickUpper = position.tickUpper.toString();
   return { tickLower, tickUpper };
