@@ -6,7 +6,6 @@ import PoolStopLoss from "./domain/poolStopLoss";
 
 const fractionToBottom = 0.75
 const positionId = 574861
-
 const poolStopLoss = new PoolStopLoss(fractionToBottom, positionId);
 
 const routine = async () => {
@@ -23,6 +22,7 @@ const init = async () => {
 
 const main = async (): Promise<void> => {
   console.log("Starting...");
+
   await init();
   await routine();
   console.log("initialized successfully");
