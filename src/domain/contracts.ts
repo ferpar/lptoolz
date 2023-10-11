@@ -27,4 +27,4 @@ export const nonFungiblePositionManagerContract = new ethers.Contract(
   nonFungiblePositionManagerAddress,
   nonFungiblePositionManagerAbi.abi,
   provider
-);
+) as any;

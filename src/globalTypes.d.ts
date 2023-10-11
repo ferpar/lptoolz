@@ -7,3 +7,5 @@ declare global {
     ethereum: Eip1193Provider
   }
 }
+
+

@@ -165,6 +165,7 @@ export async function getPositionIds(): Promise<number[]> {
   )
 
   // Get number of positions
+  console.log("address", address)
   const balance: number = await positionContract.balanceOf(address)
 
   // Get all positions

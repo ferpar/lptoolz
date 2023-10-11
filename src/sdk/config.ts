@@ -1,3 +1,5 @@
+import dotenv from "dotenv";
+dotenv.config();
 import { Token } from '@uniswap/sdk-core'
 import { FeeAmount } from '@uniswap/v3-sdk'
 import { DAI_TOKEN, USDC_TOKEN } from './libs/constants'
@@ -34,16 +36,15 @@ export interface ExampleConfig {
 // Example Configuration
 
 export const CurrentConfig: ExampleConfig = {
-  env: Environment.WALLET_EXTENSION,
+  env: Environment.MAINNET,
   rpc: {
     local: 'http://localhost:8545',
     mainnet:
       'https://rpc.ankr.com/eth/c999d8081a7661a249c12e3a57c4964bdfcbd2635eebc5ad47d961b318f01930',
   },
   wallet: {
-    address: '0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266',
-    privateKey:
-      '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80',
+    address: process.env.ADDRESS || '',
+    privateKey: process.env.PRIVATE_KEY || '',
   },
   tokens: {
     token0: USDC_TOKEN,
