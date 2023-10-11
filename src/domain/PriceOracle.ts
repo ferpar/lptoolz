@@ -5,10 +5,8 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import {
-  provider,
   uniswapV3PoolContract,
   nonFungiblePositionManagerContract,
-  erc20Abi,
   getTokenContracts
 } from "./contracts";
 

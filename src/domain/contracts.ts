@@ -29,7 +29,7 @@ export const nonFungiblePositionManagerContract = new ethers.Contract(
   provider
 ) as any;
 
-const getTokens = async () => {
+const getTokensFromPool = async () => {
   const [token0Address, token1Address] = await Promise.all([
     uniswapV3PoolContract.token0(),
     uniswapV3PoolContract.token1(),
@@ -38,7 +38,7 @@ const getTokens = async () => {
 }
 
 export const getTokenContracts = async () => {
-  const [token0Address, token1Address] = await getTokens();
+  const [token0Address, token1Address] = await getTokensFromPool();
   const token0Contract = new ethers.Contract(
     token0Address,
     erc20Abi.abi,

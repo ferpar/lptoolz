@@ -6,9 +6,10 @@ import PoolStopLoss from "./domain/poolStopLoss";
 
 import { getPositionIds } from "./sdk/libs/liquidity";
 import { decreaseLiquidity } from "./domain/decreaseLiquidity";
+import { collectFees } from "./domain/collectFees";
 
 const fractionToBottom = 0.75
-const positionId = 574861
+const positionId = 572042
 const poolStopLoss = new PoolStopLoss(fractionToBottom, positionId);
 
 const routine = async () => {
@@ -19,9 +20,8 @@ const init = async () => {
   const positions = await getPositionIds();
   console.log("positions for provided address", positions)
 
-  const positionId = 572042
   console.log("calling decreaseLiquidity for positionId", positionId)
-  const receipt = await decreaseLiquidity(positionId); 
+  const receipt = await collectFees(positionId); 
   console.log("decreaseLiquidity receipt", receipt)
 
   await poolStopLoss.init();
