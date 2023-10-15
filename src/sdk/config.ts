@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 dotenv.config();
 import { Token } from '@uniswap/sdk-core'
 import { FeeAmount } from '@uniswap/v3-sdk'
-import { DAI_TOKEN, USDC_TOKEN } from './libs/constants'
+import { DAI_TOKEN, USDC_TOKEN, WETH_TOKEN } from './libs/constants'
 
 // Sets if the example should run locally or on chain
 export enum Environment {
@@ -30,6 +30,9 @@ export interface ExampleConfig {
     poolFee: FeeAmount
     fractionToRemove: number
     fractionToAdd: number
+    in: Token,
+    amountIn: number,
+    out: Token
   }
 }
 
@@ -54,5 +57,8 @@ export const CurrentConfig: ExampleConfig = {
     poolFee: FeeAmount.LOW,
     fractionToRemove: 1,
     fractionToAdd: 0.5,
+    in: WETH_TOKEN,
+    amountIn: 1,
+    out: DAI_TOKEN
   },
 }

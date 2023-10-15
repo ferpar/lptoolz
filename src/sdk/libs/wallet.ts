@@ -1,18 +1,18 @@
 // This file contains code to easily connect to and get information from a wallet on chain
 
 import { Currency } from '@uniswap/sdk-core'
-import { ethers, Provider } from 'ethers'
+import { ethers, providers } from 'ethers'
 import { ERC20_ABI } from './constants'
 import { toReadableAmount } from './conversion'
 
 export async function getCurrencyBalance(
-  provider: Provider,
+  provider: providers.Provider,
   address: string,
   currency: Currency
 ): Promise<string> {
   // Handle ETH directly
   if (currency.isNative) {
-    return ethers.formatEther(await provider.getBalance(address))
+    return ethers.utils.formatEther(await provider.getBalance(address))
   }
 
   // Get currency otherwise

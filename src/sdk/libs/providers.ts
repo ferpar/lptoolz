@@ -1,8 +1,8 @@
-import { ethers, JsonRpcProvider, Provider } from "ethers";
+import { ethers, providers } from "ethers";
 import { Environment, CurrentConfig } from "../config";
 
 // Single copies of provider and wallet
-const mainnetProvider = new ethers.JsonRpcProvider(CurrentConfig.rpc.mainnet);
+const mainnetProvider = new providers.JsonRpcProvider(CurrentConfig.rpc.mainnet);
 const wallet = createWallet();
 
 const browserExtensionProvider = createBrowserExtensionProvider();
@@ -20,11 +20,11 @@ export enum TransactionState {
 
 // Provider and Wallet Functions
 
-export function getMainnetProvider(): JsonRpcProvider {
+export function getMainnetProvider(): providers.JsonRpcProvider {
   return mainnetProvider;
 }
 
-export function getProvider(): Provider | null {
+export function getProvider(): providers.Provider | null {
   return CurrentConfig.env === Environment.WALLET_EXTENSION
     ? browserExtensionProvider
     : wallet.provider;
@@ -37,7 +37,7 @@ export function getWalletAddress(): string | null {
 }
 
 export async function sendTransaction(
-  transaction: ethers.TransactionRequest
+  transaction: ethers.providers.TransactionRequest
 ): Promise<TransactionState> {
   if (CurrentConfig.env === Environment.WALLET_EXTENSION) {
     return sendTransactionViaExtension(transaction);
@@ -52,7 +52,7 @@ export async function connectBrowserExtensionWallet() {
   }
 
   const { ethereum } = window;
-  const provider = new ethers.BrowserProvider(ethereum);
+  const provider = new ethers.providers.Web3Provider(ethereum);
   const accounts = await provider.send("eth_requestAccounts", []);
 
   if (accounts.length !== 1) {
@@ -68,14 +68,14 @@ export async function connectBrowserExtensionWallet() {
 function createWallet(): ethers.Wallet {
   let provider = mainnetProvider;
   if (CurrentConfig.env == Environment.LOCAL) {
-    provider = new ethers.JsonRpcProvider(CurrentConfig.rpc.local);
+    provider = new providers.JsonRpcProvider(CurrentConfig.rpc.local);
   }
   return new ethers.Wallet(CurrentConfig.wallet.privateKey, provider);
 }
 
-function createBrowserExtensionProvider(): ethers.Provider | null {
+function createBrowserExtensionProvider(): providers.Web3Provider | null {
   try {
-    return new ethers.BrowserProvider(window?.ethereum, "any");
+    return new providers.Web3Provider(window?.ethereum, "any");
   } catch (e) {
     console.log("No Wallet Extension Found");
     return null;
@@ -84,15 +84,12 @@ function createBrowserExtensionProvider(): ethers.Provider | null {
 
 // Transacting with a wallet extension via a Web3 Provider
 async function sendTransactionViaExtension(
-  transaction: ethers.TransactionRequest
+  transaction: providers.TransactionRequest
 ): Promise<TransactionState> {
-  if (!browserExtensionProvider?.sendTransaction) {
-    console.log("No sendTransaction method / provider");
-    return TransactionState.Failed;
-  }
   try {
-    const receipt = await browserExtensionProvider?.sendTransaction(
-      transaction
+    const receipt = await browserExtensionProvider?.send(
+      'eth_sendTransaction',
+      [transaction]
     );
     if (receipt) {
       return TransactionState.Sent;
@@ -106,10 +103,10 @@ async function sendTransactionViaExtension(
 }
 
 async function sendTransactionViaWallet(
-  transaction: ethers.TransactionRequest
+  transaction: providers.TransactionRequest
 ): Promise<TransactionState> {
   if (transaction.value) {
-    transaction.value = BigInt(transaction.value);
+    transaction.value = BigInt(transaction.value.toString());
   }
   const txRes = await wallet.sendTransaction(transaction);
 

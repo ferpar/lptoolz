@@ -1,10 +1,9 @@
 import dotenv from "dotenv";
 dotenv.config();
-import { Wallet, ethers } from "ethers";
+import { Wallet } from "ethers";
 import {
   provider,
   nonFungiblePositionManagerContract,
-  getTokenContracts,
 } from "./contracts";
 
 export const collectFees = async (positionId: number): Promise<any> => {

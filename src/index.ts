@@ -20,11 +20,11 @@ const init = async () => {
   const positions = await getPositionIds();
   console.log("positions for provided address", positions)
 
-  console.log("calling decreaseLiquidity for positionId", positionId)
-  const receipt = await decreaseLiquidity(positionId, true); 
-  const feesReceipt = await collectFees(positionId);
-  console.log("decreaseLiquidity tx ", receipt)
-  console.log("collectFees tx ", feesReceipt)
+  // console.log("calling decreaseLiquidity for positionId", positionId)
+  // const receipt = await decreaseLiquidity(positionId, true);  // true means 100% of liquidity
+  // const feesReceipt = await collectFees(positionId);
+  // console.log("decreaseLiquidity tx ", receipt)
+  // console.log("collectFees tx ", feesReceipt)
 
   await poolStopLoss.init();
   // trigger getPoolPrice on swap event
