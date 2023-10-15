@@ -28,6 +28,7 @@ import {
 } from "./constants";
 import { fromReadableAmount } from "./conversion";
 import { ethers } from "ethers";
+import { getGasPriceInWei } from "../../domain/gasPrice";
 
 export async function generateRoute(): Promise<SwapRoute | null> {
   const router = new AlphaRouter({
@@ -75,16 +76,36 @@ export async function executeRoute(
     return TransactionState.Failed;
   }
 
+  console.log('getting gas price')
+  const gasPrice = await getGasPriceInWei();
+  if (!gasPrice) {
+    return TransactionState.Failed;
+  }
+  const gasPriceToUse = (BigInt(gasPrice.toString()) * BigInt(15)) / BigInt(10);
+  const maxPriorityFeePerGasToUse = (BigInt(gasPrice.toString()) * BigInt(5)) / BigInt(10)
+
+  console.log('sending transaction', gasPriceToUse.toString())
   const res = await sendTransaction({
     data: route.methodParameters?.calldata,
     to: V3_SWAP_ROUTER_ADDRESS,
     value: route?.methodParameters?.value,
     from: walletAddress,
-    maxFeePerGas: MAX_FEE_PER_GAS,
-    maxPriorityFeePerGas: MAX_PRIORITY_FEE_PER_GAS,
+    maxFeePerGas: gasPriceToUse.toString(),
+    maxPriorityFeePerGas: maxPriorityFeePerGasToUse.toString(),
   });
 
   return res;
+}
+
+// swaps tokens as specified in the config
+export async function executeSwap(): Promise<TransactionState> {
+  console.log('creating route')
+  const route = await generateRoute();
+  if (!route) {
+    return TransactionState.Failed;
+  }
+  console.log('executing transaction')
+  return await executeRoute(route);
 }
 
 export async function getTokenTransferApproval(

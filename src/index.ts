@@ -8,6 +8,10 @@ import { getPositionIds } from "./sdk/libs/liquidity";
 import { decreaseLiquidity } from "./domain/decreaseLiquidity";
 import { collectFees } from "./domain/collectFees";
 
+import { getGasPrice } from "./domain/gasPrice";
+import { executeSwap } from "./sdk/libs/routing";
+
+
 const fractionToBottom = 0.75
 const positionId = 572042
 const poolStopLoss = new PoolStopLoss(fractionToBottom, positionId);
@@ -25,6 +29,13 @@ const init = async () => {
   // const feesReceipt = await collectFees(positionId);
   // console.log("decreaseLiquidity tx ", receipt)
   // console.log("collectFees tx ", feesReceipt)
+
+  // const gasPrice = await getGasPrice();
+  // console.log("gasPrice: " + gasPrice + " gwei")
+
+  console.log('calling executeSwap')
+  const swapReceipt = await executeSwap();
+  console.log('executeSwap tx', swapReceipt)
 
   await poolStopLoss.init();
   // trigger getPoolPrice on swap event

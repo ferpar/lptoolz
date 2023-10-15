@@ -7,7 +7,7 @@ dotenv.config();
 import {
   uniswapV3PoolContract,
   nonFungiblePositionManagerContract,
-  getTokenContracts
+  getTokenContracts,
 } from "./contracts";
 
 // pool contract
@@ -21,7 +21,7 @@ export const getPoolPrice = async (): Promise<Big> => {
 // pool and token contracts
 export const getDecimals = async (): Promise<number[]> => {
   const [token0Contract, token1Contract] = await getTokenContracts();
-  
+
   const token0Decimals = await token0Contract.decimals();
   const token1Decimals = await token1Contract.decimals();
 

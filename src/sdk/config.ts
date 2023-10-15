@@ -57,8 +57,9 @@ export const CurrentConfig: ExampleConfig = {
     poolFee: FeeAmount.LOW,
     fractionToRemove: 1,
     fractionToAdd: 0.5,
+    // swap options:
     in: WETH_TOKEN,
-    amountIn: 1,
-    out: DAI_TOKEN
+    amountIn: 0.320,
+    out: USDC_TOKEN
   },
 }
