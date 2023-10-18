@@ -5,7 +5,8 @@ import {
   getTokenContracts,
 } from "./contracts";
 
-import { tickToPrice } from "./PriceOracle";
+import { getPoolPrice, getInvertedPrice, tickToPrice } from "./PriceOracle";
+import { get } from "http";
 
 // the PositionTracker class is a singleton
 // it serves as the go-to source of truth for the current position
@@ -17,6 +18,7 @@ interface IPositionTracker {
   pool: {
     sqrtRatioX96: string;
     price: Big | null;
+    invertedPrice: Big | null;
     tick: string;
   };
   position: {
@@ -49,10 +51,12 @@ export default class PositionTracker implements IPositionTracker {
   pool: {
     sqrtRatioX96: string;
     price: Big; // price in terms of token1 per token0
+    invertedPrice: Big; // price in terms of token0 per token1
     tick: string;
   } = {
     sqrtRatioX96: "",
     price: Big(0),
+    invertedPrice: Big(0),
     tick: "",
   };
   position: {
@@ -111,14 +115,12 @@ export default class PositionTracker implements IPositionTracker {
   private loadPoolData = async () => {
     const slot0 = await this.poolContract.slot0();
     const sqrtRatioX96 = slot0.sqrtPriceX96.toString();
-    const price = new Big(sqrtRatioX96).pow(2).div(2 ** 192);
     const tick = slot0.tick.toString();
     const poolData = {
       sqrtRatioX96,
-      price,
       tick,
     };
-    this.pool = poolData;
+    this.pool = {...this.pool, ...poolData};
     return poolData;
   };
 
@@ -176,6 +178,13 @@ export default class PositionTracker implements IPositionTracker {
     this.token1 = {...this.token1, ...token1Data};
     return [token0Data, token1Data];
   };
+
+  private derivePoolPrice = async () => {
+    const price = await getPoolPrice(this.pool.sqrtRatioX96, [ this.token0.decimals, this.token1.decimals ]);
+    const priceInverted = await getInvertedPrice(price);
+    this.pool.price = price;
+    this.pool.invertedPrice = priceInverted;
+  }
 
   private deriveTokenBalances = () => {
     const liquidity = this.position.liquidity;

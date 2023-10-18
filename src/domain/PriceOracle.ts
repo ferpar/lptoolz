@@ -12,7 +12,7 @@ import {
 
 // pool contract
 // TODO: account for decimals difference between token0 and token1
-export const getPoolPrice = async (decimals? : number[]): Promise<Big> => {
+export const getPoolPrice = async (_sqrtRatioX96?: string, decimals? : number[]): Promise<Big> => {
 
   const [token0Decimals, token1Decimals] = !decimals?.length
     ? await getDecimals()
@@ -20,7 +20,7 @@ export const getPoolPrice = async (decimals? : number[]): Promise<Big> => {
   const decimalsDifference = Number(token0Decimals - token1Decimals);
 
   const slot0 = await uniswapV3PoolContract.slot0();
-  const sqrtRatioX96 = slot0.sqrtPriceX96.toString();
+  const sqrtRatioX96 = _sqrtRatioX96 ? _sqrtRatioX96 : slot0.sqrtPriceX96.toString();
   const sharePrice = new Big(sqrtRatioX96).pow(2).div(2 ** 192);
 
   const price = sharePrice.mul(Big(10).pow(decimalsDifference));
