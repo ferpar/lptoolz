@@ -74,7 +74,7 @@ export const tickToPrice = async (tick: string, decimals?: number[]): Promise<Bi
     ? await getDecimals()
     : decimals;
   const decimalsDifference = Number(token0Decimals - token1Decimals);
-  const price = Big(1.0001).pow(parseInt(tick)).mul(Big(10).pow(decimalsDifference));
+  const price = Big(Math.pow(1.0001, parseInt(tick))).mul(Big(10).pow(decimalsDifference));
   return price;
 };
 

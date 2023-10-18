@@ -74,18 +74,20 @@ export default class PositionTracker implements IPositionTracker {
     priceLowerBound: Big(0),
     priceUpperBound: Big(0),
   };
-  token0: { address: string; decimals: number; symbol: string; name: string } = {
-    address: "",
-    decimals: 0,
-    symbol: "",
-    name: "",
-  };
-  token1: { address: string; decimals: number; symbol: string; name: string } = {
-    address: "",
-    decimals: 0,
-    symbol: "",
-    name: "",
-  };
+  token0: { address: string; decimals: number; symbol: string; name: string } =
+    {
+      address: "",
+      decimals: 0,
+      symbol: "",
+      name: "",
+    };
+  token1: { address: string; decimals: number; symbol: string; name: string } =
+    {
+      address: "",
+      decimals: 0,
+      symbol: "",
+      name: "",
+    };
   private static instance: PositionTracker | null = null;
 
   private constructor() {
@@ -93,14 +95,16 @@ export default class PositionTracker implements IPositionTracker {
   }
 
   async initialize(positionId: number) {
-    console.log('initializing PositionTracker')
+    console.log("initializing PositionTracker");
     await this.loadPoolData();
     await this.loadPositionData(positionId);
     await this.loadTokenData();
-    console.log('finished loading position tracker data')
-    console.log('deriving token reserves')
+    console.log("finished loading position tracker data");
+    console.log("deriving pool prices");
+    await this.derivePoolPrice();
+    console.log("deriving token reserves");
     this.deriveTokenBalances();
-    console.log('finished deriving token reserves')
+    console.log("finished deriving token reserves");
     this.initialized = true;
   }
 
@@ -113,6 +117,7 @@ export default class PositionTracker implements IPositionTracker {
   }
 
   private loadPoolData = async () => {
+    console.log("loading pool data");
     const slot0 = await this.poolContract.slot0();
     const sqrtRatioX96 = slot0.sqrtPriceX96.toString();
     const tick = slot0.tick.toString();
@@ -120,32 +125,30 @@ export default class PositionTracker implements IPositionTracker {
       sqrtRatioX96,
       tick,
     };
-    this.pool = {...this.pool, ...poolData};
+    this.pool = { ...this.pool, ...poolData };
     return poolData;
   };
 
   private loadPositionData = async (positionId: number) => {
+    console.log("loading position data");
     const position = await this.positionManager.positions(positionId);
+    console.log("position");
     const tickLower = position.tickLower.toString();
     const tickUpper = position.tickUpper.toString();
     const fee = position.fee.toString();
     const liquidity = Big(position.liquidity);
     const token0Address = position.token0;
     const token1Address = position.token1;
-
-    const priceLowerBound = await tickToPrice(position.tickLower);
-    const priceUpperBound = await tickToPrice(position.tickUpper);
+    console.log("before tickToPrice");
 
     const positionData = {
       tickLower,
       tickUpper,
       fee,
       liquidity,
-      priceLowerBound,
-      priceUpperBound,
-    };  // const gasPrice = await getGasPrice();
+    }; // const gasPrice = await getGasPrice();
     // console.log("gasPrice: " + gasPrice + " gwei")
-    this.position = positionData;
+    this.position = { ...this.position, ...positionData };
     this.token0.address = token0Address;
     this.token1.address = token1Address;
 
@@ -154,6 +157,7 @@ export default class PositionTracker implements IPositionTracker {
 
   // get token decimals, symbol, name, balance derived from liquidity and ticks
   private loadTokenData = async () => {
+    console.log("loading token data");
     const [token0Contract, token1Contract] = await getTokenContracts();
     const token0Decimals = await token0Contract.decimals();
     const token1Decimals = await token1Contract.decimals();
@@ -174,34 +178,56 @@ export default class PositionTracker implements IPositionTracker {
       name: token1Name,
     };
 
-    this.token0 = {...this.token0, ...token0Data};
-    this.token1 = {...this.token1, ...token1Data};
+    this.token0 = { ...this.token0, ...token0Data };
+    this.token1 = { ...this.token1, ...token1Data };
     return [token0Data, token1Data];
   };
 
   private derivePoolPrice = async () => {
-    const price = await getPoolPrice(this.pool.sqrtRatioX96, [ this.token0.decimals, this.token1.decimals ]);
+    const price = await getPoolPrice(this.pool.sqrtRatioX96, [
+      this.token0.decimals,
+      this.token1.decimals,
+    ]);
     const priceInverted = await getInvertedPrice(price);
+
+    const priceLowerBound = await tickToPrice(this.position.tickLower, [
+      this.token0.decimals,
+      this.token1.decimals,
+    ]);
+    const priceUpperBound = await tickToPrice(this.position.tickUpper, [
+      this.token0.decimals,
+      this.token1.decimals,
+    ]);
+
     this.pool.price = price;
     this.pool.invertedPrice = priceInverted;
-  }
+    this.position.priceLowerBound = priceLowerBound;
+    this.position.priceUpperBound = priceUpperBound;
+
+    return {
+      price,
+      priceInverted,
+    };
+  };
 
   private deriveTokenBalances = () => {
     const liquidity = this.position.liquidity;
-    const sqrtPrice = this.pool.price.pow(0.5)
-    const sqrtLowerBound = this.position.priceLowerBound.pow(0.5)
-    const sqrtUpperBound = this.position.priceUpperBound.pow(0.5)
-    const invSqrtPrice = sqrtPrice.pow(-1)
-    const invSqrtUpperBound = sqrtUpperBound.pow(-1)
+    const sqrtPrice = this.pool.price.sqrt();
+    const sqrtLowerBound = this.position.priceLowerBound.sqrt();
+    const sqrtUpperBound = this.position.priceUpperBound.sqrt();
+    const invSqrtPrice = sqrtPrice.pow(-1);
+    const invSqrtUpperBound = sqrtUpperBound.pow(-1);
 
     // TODO: check if this derivation is correct
     // in terms of token1
-    const reservesToken1In1 = liquidity.mul(sqrtPrice.minus(sqrtLowerBound))
-    const reservesToken0In1 = liquidity.mul(invSqrtPrice.minus(invSqrtUpperBound))
+    const reservesToken1In1 = liquidity.mul(sqrtPrice.minus(sqrtLowerBound));
+    const reservesToken0In1 = liquidity.mul(
+      invSqrtPrice.minus(invSqrtUpperBound)
+    );
 
     // in terms of token0
-    const reservesToken0In0 = reservesToken0In1.mul(this.pool.price)
+    const reservesToken0In0 = reservesToken0In1.mul(this.pool.price);
 
     ////
-  }
+  };
 }
