@@ -20,14 +20,14 @@ const poolStopLoss = async (
   verbose: boolean = false
 ) => {
   // get current price
-  const rawPrice = await getPoolPrice();
-  const price = Big(await getInvertedPrice(rawPrice, decimals));
+  const priceInToken1 = await getPoolPrice();
+  const price = Big(await getInvertedPrice(priceInToken1));
   // get lower and upper price in token0 (token0 as quote currency)
-  const lowerPrice = tickToPrice(positionTicks.tickLower);
-  const upperPrice = tickToPrice(positionTicks.tickUpper);
+  const lowerPrice = await tickToPrice(positionTicks.tickLower);
+  const upperPrice = await tickToPrice(positionTicks.tickUpper);
   // as we invert prices we need to invert lower and upper price since they are in token0/token1
-  const token1PriceLower = await getInvertedPrice(Big(upperPrice), decimals);
-  const token1PriceUpper = await getInvertedPrice(Big(lowerPrice), decimals);
+  const token1PriceLower = await getInvertedPrice(upperPrice);
+  const token1PriceUpper = await getInvertedPrice(lowerPrice);
   // calculate stop loss price as fraction of interval between lower and upper price
   const fromUpperToLower = token1PriceUpper.minus(token1PriceLower);
   const stopLossPrice = token1PriceUpper.minus(fromUpperToLower.mul(fractionToBottom))

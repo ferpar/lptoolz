@@ -89,16 +89,21 @@ export default class PositionTracker implements IPositionTracker {
   }
 
   async initialize(positionId: number) {
+    console.log('initializing PositionTracker')
     await this.loadPoolData();
     await this.loadPositionData(positionId);
     await this.loadTokenData();
+    console.log('finished loading position tracker data')
+    console.log('deriving token reserves')
+    this.deriveTokenBalances();
+    console.log('finished deriving token reserves')
     this.initialized = true;
   }
 
-  static getInstance(positionId: number = 0) {
+  static async getInstance(positionId: number = 0) {
     if (!this.instance) {
       this.instance = new PositionTracker();
-      this.instance.initialize(positionId);
+      await this.instance.initialize(positionId);
     }
     return this.instance;
   }
@@ -108,8 +113,6 @@ export default class PositionTracker implements IPositionTracker {
     const sqrtRatioX96 = slot0.sqrtPriceX96.toString();
     const price = new Big(sqrtRatioX96).pow(2).div(2 ** 192);
     const tick = slot0.tick.toString();
-    const token0Address = await this.poolContract.token0();
-    const token1Address = await this.poolContract.token1();
     const poolData = {
       sqrtRatioX96,
       price,
@@ -128,8 +131,8 @@ export default class PositionTracker implements IPositionTracker {
     const token0Address = position.token0;
     const token1Address = position.token1;
 
-    const priceLowerBound = Big(tickToPrice(this.position.tickLower));
-    const priceUpperBound = Big(tickToPrice(this.position.tickUpper));
+    const priceLowerBound = await tickToPrice(position.tickLower);
+    const priceUpperBound = await tickToPrice(position.tickUpper);
 
     const positionData = {
       tickLower,
@@ -138,7 +141,8 @@ export default class PositionTracker implements IPositionTracker {
       liquidity,
       priceLowerBound,
       priceUpperBound,
-    };
+    };  // const gasPrice = await getGasPrice();
+    // console.log("gasPrice: " + gasPrice + " gwei")
     this.position = positionData;
     this.token0.address = token0Address;
     this.token1.address = token1Address;

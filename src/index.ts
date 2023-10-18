@@ -4,6 +4,8 @@ dotenv.config();
 import { uniswapV3PoolContract } from "./domain/contracts";
 import PoolStopLoss from "./domain/poolStopLoss";
 
+import PositionTracker from "./domain/PositionTracker";
+
 import { getPositionIds } from "./sdk/libs/liquidity";
 import { decreaseLiquidity } from "./domain/decreaseLiquidity";
 import { collectFees } from "./domain/collectFees";
@@ -14,10 +16,11 @@ import { executeSwap } from "./sdk/libs/routing";
 
 const fractionToBottom = 0.75
 const positionId = 572042
-const poolStopLoss = new PoolStopLoss(fractionToBottom, positionId);
+// const poolStopLoss = new PoolStopLoss(fractionToBottom, positionId);
 
 const routine = async () => {
-  poolStopLoss.check(true);
+  // poolStopLoss.check(true);
+  console.log('swap event triggered')
 };
 
 const init = async () => {
@@ -37,8 +40,11 @@ const init = async () => {
   // const swapReceipt = await executeSwap();
   // console.log('executeSwap tx', swapReceipt)
 
-  await poolStopLoss.init();
+  // await poolStopLoss.init();
   // trigger getPoolPrice on swap event
+
+  await PositionTracker.getInstance(positionId);
+
   uniswapV3PoolContract.on("Swap", async (sender, amount0, amount1, data) => {
     await routine();
   });

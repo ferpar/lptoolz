@@ -11,10 +11,19 @@ import {
 } from "./contracts";
 
 // pool contract
-export const getPoolPrice = async (): Promise<Big> => {
+// TODO: account for decimals difference between token0 and token1
+export const getPoolPrice = async (decimals? : number[]): Promise<Big> => {
+
+  const [token0Decimals, token1Decimals] = !decimals?.length
+    ? await getDecimals()
+    : decimals;
+  const decimalsDifference = Number(token0Decimals - token1Decimals);
+
   const slot0 = await uniswapV3PoolContract.slot0();
   const sqrtRatioX96 = slot0.sqrtPriceX96.toString();
-  const price = new Big(sqrtRatioX96).pow(2).div(2 ** 192);
+  const sharePrice = new Big(sqrtRatioX96).pow(2).div(2 ** 192);
+
+  const price = sharePrice.mul(Big(10).pow(decimalsDifference));
   return price;
 };
 
@@ -29,16 +38,12 @@ export const getDecimals = async (): Promise<number[]> => {
 };
 
 // pool, and token contracts
+// TODO: simplify once getPoolPrice accounts for decimals
 export const getInvertedPrice = async (
-  price: Big,
-  decimals?: number[]
+  price: Big
 ): Promise<Big> => {
   // consider the decimals of each token, dont call api if decimals are provided
-  const [token0Decimals, token1Decimals] = !decimals?.length
-    ? await getDecimals()
-    : decimals;
-  const decimalsDifference = Number(token1Decimals - token0Decimals);
-  const invertedPrice = price.pow(-1).mul(Big(10).pow(decimalsDifference));
+  const invertedPrice = price.pow(-1);
   return invertedPrice;
 };
 
@@ -63,8 +68,13 @@ export const getPositionTicks = async (positionId: number) => {
   return { tickLower, tickUpper };
 };
 
-export const tickToPrice = (tick: string): number => {
-  const price = Math.pow(1.0001, parseInt(tick));
+// TODO: account for decimals difference between token0 and token1
+export const tickToPrice = async (tick: string, decimals?: number[]): Promise<Big> => {
+  const [token0Decimals, token1Decimals] = !decimals?.length
+    ? await getDecimals()
+    : decimals;
+  const decimalsDifference = Number(token0Decimals - token1Decimals);
+  const price = Big(1.0001).pow(parseInt(tick)).mul(Big(10).pow(decimalsDifference));
   return price;
 };
 
@@ -76,12 +86,12 @@ export const printData = async () => {
   console.log(`inverted Pool price ${Number(invertedPoolPrice)}`);
   console.log(`ETH price: ${price}`);
   const { tickLower, tickUpper } = await getPositionTicks(574861);
-  const lowerPrice = tickToPrice(tickLower);
-  const upperPrice = tickToPrice(tickUpper);
+  const lowerPrice = await tickToPrice(tickLower);
+  const upperPrice = await tickToPrice(tickUpper);
   console.log(`lower price: ${lowerPrice}`);
   console.log(`upper price: ${upperPrice}`);
-  const token1PriceLower = await getInvertedPrice(Big(lowerPrice));
-  const token1PriceUpper = await getInvertedPrice(Big(upperPrice));
+  const token1PriceLower = await getInvertedPrice(lowerPrice);
+  const token1PriceUpper = await getInvertedPrice(upperPrice);
   console.log(`token1 price lower: ${token1PriceLower}`);
   console.log(`token1 price upper: ${token1PriceUpper}`);
   return "done";
