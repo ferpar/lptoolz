@@ -7,6 +7,12 @@ import {
   getInvertedPrice,
 } from "./PriceOracle";
 
+import { decreaseLiquidity } from "../domain/decreaseLiquidity";
+import { collectFees } from "../domain/collectFees";
+
+import { getGasPrice } from "../domain/gasPrice";
+import { executeSwap } from "../sdk/libs/routing";
+
 const poolStopLoss = async (
   fractionToBottom: number,
   positionTicks: { tickLower: string; tickUpper: string },
@@ -48,6 +54,7 @@ export default class PoolStopLoss {
     tickLower: "",
     tickUpper: "",
   };
+  exited: boolean = false;
   constructor(public fractionToBottom: number, public positionId: number) {
     this.fractionToBottom = fractionToBottom;
     this.positionId = positionId;
@@ -65,5 +72,23 @@ export default class PoolStopLoss {
       this.decimals,
       verbose
     );
+  }
+  // WIP method - need to get token reserves and calculate how much to withdraw
+  public async checkAndExit() {
+    const belowStopLossPrice = await this.check();
+    if (belowStopLossPrice && !this.exited) {
+      console.log("below stop loss price, exiting");
+      console.log("calling decreaseLiquidity for positionId", this.positionId)
+      const receipt = await decreaseLiquidity(this.positionId, true);  // true means 100% of liquidity
+      const feesReceipt = await collectFees(this.positionId);
+      console.log("decreaseLiquidity tx ", receipt)
+      console.log("collectFees tx ", feesReceipt)
+
+      console.log('calling executeSwap')
+      const swapReceipt = await executeSwap();
+      console.log('executeSwap tx', swapReceipt)
+
+      this.exited = true;
+    }
   }
 }

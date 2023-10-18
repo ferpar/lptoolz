@@ -33,9 +33,9 @@ const init = async () => {
   // const gasPrice = await getGasPrice();
   // console.log("gasPrice: " + gasPrice + " gwei")
 
-  console.log('calling executeSwap')
-  const swapReceipt = await executeSwap();
-  console.log('executeSwap tx', swapReceipt)
+  // console.log('calling executeSwap')
+  // const swapReceipt = await executeSwap();
+  // console.log('executeSwap tx', swapReceipt)
 
   await poolStopLoss.init();
   // trigger getPoolPrice on swap event
