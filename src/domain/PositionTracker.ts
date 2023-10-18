@@ -18,8 +18,6 @@ interface IPositionTracker {
     sqrtRatioX96: string;
     price: Big | null;
     tick: string;
-    token0Address: string;
-    token1Address: string;
   };
   position: {
     tickLower: string;
@@ -52,12 +50,8 @@ export default class PositionTracker implements IPositionTracker {
     sqrtRatioX96: string;
     price: Big; // price in terms of token1 per token0
     tick: string;
-    token0Address: string;
-    token1Address: string;
   } = {
     sqrtRatioX96: "",
-    token0Address: "",
-    token1Address: "",
     price: Big(0),
     tick: "",
   };
@@ -120,12 +114,8 @@ export default class PositionTracker implements IPositionTracker {
       sqrtRatioX96,
       price,
       tick,
-      token0Address,
-      token1Address,
     };
     this.pool = poolData;
-    this.token0.address = token0Address;
-    this.token1.address = token1Address;
     return poolData;
   };
 
@@ -135,6 +125,8 @@ export default class PositionTracker implements IPositionTracker {
     const tickUpper = position.tickUpper.toString();
     const fee = position.fee.toString();
     const liquidity = Big(position.liquidity);
+    const token0Address = position.token0;
+    const token1Address = position.token1;
 
     const priceLowerBound = Big(tickToPrice(this.position.tickLower));
     const priceUpperBound = Big(tickToPrice(this.position.tickUpper));
@@ -148,6 +140,9 @@ export default class PositionTracker implements IPositionTracker {
       priceUpperBound,
     };
     this.position = positionData;
+    this.token0.address = token0Address;
+    this.token1.address = token1Address;
+
     return positionData;
   };
 

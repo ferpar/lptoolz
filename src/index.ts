@@ -21,8 +21,8 @@ const routine = async () => {
 };
 
 const init = async () => {
-  const positions = await getPositionIds();
-  console.log("positions for provided address", positions)
+  // const positions = await getPositionIds();
+  // console.log("positions for provided address", positions)
 
   // console.log("calling decreaseLiquidity for positionId", positionId)
   // const receipt = await decreaseLiquidity(positionId, true);  // true means 100% of liquidity
