@@ -19,11 +19,11 @@ interface IPositionTracker {
     sqrtRatioX96: string;
     price: Big | null;
     invertedPrice: Big | null;
-    tick: string;
+    tick: number;
   };
   position: {
-    tickLower: string;
-    tickUpper: string;
+    tickLower: number;
+    tickUpper: number;
     fee: string;
     liquidity: Big;
     priceLowerBound: Big;
@@ -52,23 +52,23 @@ export default class PositionTracker implements IPositionTracker {
     sqrtRatioX96: string;
     price: Big; // price in terms of token1 per token0
     invertedPrice: Big; // price in terms of token0 per token1
-    tick: string;
+    tick: number;
   } = {
     sqrtRatioX96: "",
     price: Big(0),
     invertedPrice: Big(0),
-    tick: "",
+    tick: 0,
   };
   position: {
-    tickLower: string;
-    tickUpper: string;
+    tickLower: number;
+    tickUpper: number;
     fee: string;
     liquidity: Big;
     priceLowerBound: Big;
     priceUpperBound: Big;
   } = {
-    tickLower: "",
-    tickUpper: "",
+    tickLower: 0,
+    tickUpper: 0,
     fee: "",
     liquidity: Big(0),
     priceLowerBound: Big(0),
@@ -101,7 +101,7 @@ export default class PositionTracker implements IPositionTracker {
     await this.loadTokenData();
     console.log("finished loading position tracker data");
     console.log("deriving pool prices");
-    await this.derivePoolPrice();
+    await this.derivePoolPrices();
     console.log("deriving token reserves");
     this.deriveTokenBalances();
     console.log("finished deriving token reserves");
@@ -183,18 +183,18 @@ export default class PositionTracker implements IPositionTracker {
     return [token0Data, token1Data];
   };
 
-  private derivePoolPrice = async () => {
+  private derivePoolPrices = async () => {
     const price = await getPoolPrice(this.pool.sqrtRatioX96, [
       this.token0.decimals,
       this.token1.decimals,
     ]);
-    const priceInverted = await getInvertedPrice(price);
 
-    const priceLowerBound = await tickToPrice(this.position.tickLower, [
+    const priceInverted = await getInvertedPrice(price);
+    const priceLowerBound = await tickToPrice(String(this.position.tickLower), [
       this.token0.decimals,
       this.token1.decimals,
     ]);
-    const priceUpperBound = await tickToPrice(this.position.tickUpper, [
+    const priceUpperBound = await tickToPrice(String(this.position.tickUpper), [
       this.token0.decimals,
       this.token1.decimals,
     ]);
@@ -207,27 +207,38 @@ export default class PositionTracker implements IPositionTracker {
     return {
       price,
       priceInverted,
+      priceLowerBound,
+      priceUpperBound
     };
   };
 
   private deriveTokenBalances = () => {
     const liquidity = this.position.liquidity;
-    const sqrtPrice = this.pool.price.sqrt();
-    const sqrtLowerBound = this.position.priceLowerBound.sqrt();
-    const sqrtUpperBound = this.position.priceUpperBound.sqrt();
-    const invSqrtPrice = sqrtPrice.pow(-1);
-    const invSqrtUpperBound = sqrtUpperBound.pow(-1);
+    const sqrtPrice = Big(1.0001).pow(this.pool.tick);
+    const sqrtLowerBound = Big(1.0001).pow(this.position.tickLower);
+    const sqrtUpperBound = Big(1.0001).pow(this.position.tickUpper);
 
     // TODO: check if this derivation is correct
     // in terms of token1
-    const reservesToken1In1 = liquidity.mul(sqrtPrice.minus(sqrtLowerBound));
-    const reservesToken0In1 = liquidity.mul(
-      invSqrtPrice.minus(invSqrtUpperBound)
-    );
-
+    // known as x
+    const reservesToken0Wei = liquidity.mul(Big(sqrtUpperBound.sub(sqrtPrice)).div(sqrtPrice.mul(sqrtUpperBound)))
     // in terms of token0
-    const reservesToken0In0 = reservesToken0In1.mul(this.pool.price);
-
+    // known as y
+    const reservesToken1Wei = liquidity.mul((sqrtPrice.sub(sqrtLowerBound)))
     ////
+
+    const token0Balance = reservesToken0Wei.mul(Big(10).pow(this.token0.decimals));
+    const token1Balance = reservesToken1Wei.mul(Big(10).pow(this.token1.decimals));
+
+    console.table({
+      liquidity: liquidity.toString(),
+      sqrtPrice: sqrtPrice.toString(),
+      sqrtLowerBound: sqrtLowerBound.toString(),
+      sqrtUpperBound: sqrtUpperBound.toString(),
+      reservesToken0Wei: reservesToken0Wei.toString(),
+      reservesToken1Wei: reservesToken1Wei.toString(),
+      token0Balance: token0Balance.toString(),
+      token1Balance: token1Balance.toString(),
+    })
   };
 }
