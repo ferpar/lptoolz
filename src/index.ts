@@ -15,8 +15,9 @@ import { executeSwap } from "./sdk/libs/routing";
 
 
 const fractionToBottom = 0.75
-const positionId = 582151
+const positionId = 584984
 // const poolStopLoss = new PoolStopLoss(fractionToBottom, positionId);
+let positionTracker
 
 const routine = async () => {
   // poolStopLoss.check(true);
@@ -43,7 +44,7 @@ const init = async () => {
   // await poolStopLoss.init();
   // trigger getPoolPrice on swap event
 
-  await PositionTracker.getInstance(positionId);
+  positionTracker = await PositionTracker.getInstance(positionId);
 
   uniswapV3PoolContract.on("Swap", async (sender, amount0, amount1, data) => {
     await routine();

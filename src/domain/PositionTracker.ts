@@ -214,11 +214,23 @@ export default class PositionTracker implements IPositionTracker {
 
   private deriveTokenBalances = () => {
     const liquidity = this.position.liquidity;
-    const sqrtPrice = Big(1.0001).pow(this.pool.tick);
-    const sqrtLowerBound = Big(1.0001).pow(this.position.tickLower);
-    const sqrtUpperBound = Big(1.0001).pow(this.position.tickUpper);
+    const priceWei = Big(Math.pow(1.0001, this.pool.tick));
+    const lowerBoundWei = Big(Math.pow(1.0001, this.position.tickLower));
+    const upperBoundWei = Big(Math.pow(1.0001, this.position.tickUpper));
 
-    // TODO: check if this derivation is correct
+    let priceForReserves 
+    if (priceWei.gt(upperBoundWei)) {
+      priceForReserves = upperBoundWei;
+    } else if (priceWei.lt(lowerBoundWei)) {
+      priceForReserves = lowerBoundWei;
+    } else {
+      priceForReserves = priceWei;
+    }
+      
+    const sqrtPrice = priceForReserves.sqrt();
+    const sqrtLowerBound = lowerBoundWei.sqrt();
+    const sqrtUpperBound = upperBoundWei.sqrt();
+
     // in terms of token1
     // known as x
     const reservesToken0Wei = liquidity.mul(Big(sqrtUpperBound.sub(sqrtPrice)).div(sqrtPrice.mul(sqrtUpperBound)))
@@ -227,8 +239,8 @@ export default class PositionTracker implements IPositionTracker {
     const reservesToken1Wei = liquidity.mul((sqrtPrice.sub(sqrtLowerBound)))
     ////
 
-    const token0Balance = reservesToken0Wei.mul(Big(10).pow(this.token0.decimals));
-    const token1Balance = reservesToken1Wei.mul(Big(10).pow(this.token1.decimals));
+    const token0Balance = reservesToken0Wei.mul(Big(10).pow(-this.token0.decimals));
+    const token1Balance = reservesToken1Wei.mul(Big(10).pow(-this.token1.decimals));
 
     console.table({
       liquidity: liquidity.toString(),
