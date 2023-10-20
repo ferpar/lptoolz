@@ -2,50 +2,25 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import { uniswapV3PoolContract } from "./domain/contracts";
-import PoolStopLoss from "./domain/poolStopLoss";
 
 import PositionTracker, { IPositionTracker } from "./domain/PositionTracker";
+import LiquidityManager, { ILiquidityManager } from "./domain/LiquidityManager";
 
-import { getPositionIds } from "./sdk/libs/liquidity";
-import { decreaseLiquidity } from "./domain/decreaseLiquidity";
-import { collectFees } from "./domain/collectFees";
-
-import { getGasPrice } from "./domain/gasPrice";
-import { executeSwap } from "./sdk/libs/routing";
-
-
-const fractionToBottom = 0.75
-const positionId = 584984
-// const poolStopLoss = new PoolStopLoss(fractionToBottom, positionId);
-let positionTracker: IPositionTracker
+const fractionToBottom = 0.75;
+const positionId = process.env.POSITION_ID
+  ? Number(process.env.POSITION_ID)
+  : 0;
+let positionTracker: IPositionTracker;
+let liquidityManager: ILiquidityManager;
 
 const routine = async () => {
-  // poolStopLoss.check(true);
-  await positionTracker.updateBalances();
-  console.log('swap event triggered')
+  console.log("swap event triggered");
+  await liquidityManager.stopLoss(fractionToBottom, { test: true });
 };
 
 const init = async () => {
-  // const positions = await getPositionIds();
-  // console.log("positions for provided address", positions)
-
-  // console.log("calling decreaseLiquidity for positionId", positionId)
-  // const receipt = await decreaseLiquidity(positionId, true);  // true means 100% of liquidity
-  // const feesReceipt = await collectFees(positionId);
-  // console.log("decreaseLiquidity tx ", receipt)
-  // console.log("collectFees tx ", feesReceipt)
-
-  // const gasPrice = await getGasPrice();
-  // console.log("gasPrice: " + gasPrice + " gwei")
-
-  // console.log('calling executeSwap')
-  // const swapReceipt = await executeSwap();
-  // console.log('executeSwap tx', swapReceipt)
-
-  // await poolStopLoss.init();
-  // trigger getPoolPrice on swap event
-
   positionTracker = await PositionTracker.getInstance(positionId);
+  liquidityManager = new LiquidityManager(positionTracker);  
 
   uniswapV3PoolContract.on("Swap", async (sender, amount0, amount1, data) => {
     await routine();

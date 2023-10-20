@@ -17,8 +17,8 @@ export interface IPositionTracker {
   initialized: boolean;
   pool: {
     sqrtRatioX96: string;
-    price: Big | null;
-    invertedPrice: Big | null;
+    price: Big;
+    invertedPrice: Big;
     tick: number;
   };
   position: {
