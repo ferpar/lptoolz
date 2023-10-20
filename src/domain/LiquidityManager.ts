@@ -45,6 +45,12 @@ export default class LiquidityManager implements ILiquidityManager {
         console.log("Upper price: ", upperPrice.toString());
         console.log("Stop loss price: ", stopLossPrice.toString());
         console.log("Current price is below stop loss price: ", belowStopLossPrice);
+        return
+    }
+    if (belowStopLossPrice) {
+        console.log("below stop loss price, exiting");
+        // TODO: replace with withdrawAndSwapToStablecoin
+        await this.withdraw();
     }
   }
 }
