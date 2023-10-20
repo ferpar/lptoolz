@@ -11,7 +11,7 @@ import { get } from "http";
 // the PositionTracker class is a singleton
 // it serves as the go-to source of truth for the current position
 // it is initialized on startup and updated on every swap event
-interface IPositionTracker {
+export interface IPositionTracker {
   poolContract: typeof uniswapV3PoolContract;
   positionManager: typeof nonFungiblePositionManagerContract;
   initialized: boolean;
@@ -22,12 +22,15 @@ interface IPositionTracker {
     tick: number;
   };
   position: {
+    positionId: number;
     tickLower: number;
     tickUpper: number;
     fee: string;
     liquidity: Big;
     priceLowerBound: Big;
     priceUpperBound: Big;
+    token0Balance: Big;
+    token1Balance: Big;
   };
   token0: {
     address: string;
@@ -41,6 +44,9 @@ interface IPositionTracker {
     symbol: string;
     name: string;
   };
+
+  updateBalances(): Promise<void>;
+
 }
 
 export default class PositionTracker implements IPositionTracker {
@@ -60,19 +66,25 @@ export default class PositionTracker implements IPositionTracker {
     tick: 0,
   };
   position: {
+    positionId: number;
     tickLower: number;
     tickUpper: number;
     fee: string;
     liquidity: Big;
     priceLowerBound: Big;
     priceUpperBound: Big;
+    token0Balance: Big;
+    token1Balance: Big;
   } = {
+    positionId: 0,
     tickLower: 0,
     tickUpper: 0,
     fee: "",
     liquidity: Big(0),
     priceLowerBound: Big(0),
     priceUpperBound: Big(0),
+    token0Balance: Big(0),
+    token1Balance: Big(0)
   };
   token0: { address: string; decimals: number; symbol: string; name: string } =
     {
@@ -94,7 +106,8 @@ export default class PositionTracker implements IPositionTracker {
     this.initialized = false;
   }
 
-  async initialize(positionId: number) {
+  private async initialize(positionId: number) {
+    this.position.positionId = positionId;
     console.log("initializing PositionTracker");
     await this.loadPoolData();
     await this.loadPositionData(positionId);
@@ -114,6 +127,15 @@ export default class PositionTracker implements IPositionTracker {
       await this.instance.initialize(positionId);
     }
     return this.instance;
+  }
+
+  async updateBalances() {
+    console.log("updating balances");
+    await this.loadPoolData();
+    await this.loadPositionData(this.position.positionId);
+    await this.derivePoolPrices();
+    this.deriveTokenBalances();
+
   }
 
   private loadPoolData = async () => {
@@ -252,5 +274,8 @@ export default class PositionTracker implements IPositionTracker {
       token0Balance: token0Balance.toString(),
       token1Balance: token1Balance.toString(),
     })
+
+    this.position.token0Balance = token0Balance;
+    this.position.token1Balance = token1Balance;
   };
 }

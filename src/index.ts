@@ -4,7 +4,7 @@ dotenv.config();
 import { uniswapV3PoolContract } from "./domain/contracts";
 import PoolStopLoss from "./domain/poolStopLoss";
 
-import PositionTracker from "./domain/PositionTracker";
+import PositionTracker, { IPositionTracker } from "./domain/PositionTracker";
 
 import { getPositionIds } from "./sdk/libs/liquidity";
 import { decreaseLiquidity } from "./domain/decreaseLiquidity";
@@ -17,10 +17,11 @@ import { executeSwap } from "./sdk/libs/routing";
 const fractionToBottom = 0.75
 const positionId = 584984
 // const poolStopLoss = new PoolStopLoss(fractionToBottom, positionId);
-let positionTracker
+let positionTracker: IPositionTracker
 
 const routine = async () => {
   // poolStopLoss.check(true);
+  await positionTracker.updateBalances();
   console.log('swap event triggered')
 };
 
