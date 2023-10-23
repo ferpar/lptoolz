@@ -2,8 +2,13 @@ import { ethers } from "ethers";
 import dotenv from "dotenv";
 dotenv.config();
 
+const selectedNetwork = process.env.NETWORK || "ETH-MAINNET";
+const providerUrl =
+  selectedNetwork === "ETH-MAINNET"
+    ? process.env.ALCHEMY_WSS_URL
+    : process.env.ALCHEMY_POLYGON_WSS_URL;
 export const provider = new ethers.providers.WebSocketProvider(
-  `wss://eth-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`
+  providerUrl || ""
 );
 
 // pool for uscd/eth at 0.05% fee tier
@@ -11,7 +16,8 @@ const UniV3PoolAddress = process.env.POOL_ADDRESS || "";
 const uniswapV3PoolAbi = require("@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json");
 
 // non fungible position manager
-const nonFungiblePositionManagerAddress = process.env.POSITION_MANAGER_ADDRESS || "";
+const nonFungiblePositionManagerAddress =
+  process.env.POSITION_MANAGER_ADDRESS || "";
 const nonFungiblePositionManagerAbi = require("@uniswap/v3-periphery/artifacts/contracts/interfaces/INonfungiblePositionManager.sol/INonfungiblePositionManager.json");
 
 // get contract for erc20
@@ -35,7 +41,7 @@ const getTokensFromPool = async () => {
     uniswapV3PoolContract.token1(),
   ]);
   return [token0Address, token1Address];
-}
+};
 
 export const getTokenContracts = async () => {
   const [token0Address, token1Address] = await getTokensFromPool();
@@ -50,4 +56,4 @@ export const getTokenContracts = async () => {
     provider
   );
   return [token0Contract, token1Contract];
-}
+};

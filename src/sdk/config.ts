@@ -41,9 +41,11 @@ export interface ExampleConfig {
 export const CurrentConfig: ExampleConfig = {
   env: Environment.MAINNET,
   rpc: {
-    local: 'http://localhost:8545',
+    local: process.env.LOCAL_RPC_URL || '',
     mainnet:
-      'https://rpc.ankr.com/eth/c999d8081a7661a249c12e3a57c4964bdfcbd2635eebc5ad47d961b318f01930',
+      process.env.NETWORK === "ETH-MAINNET" 
+        ? process.env.ANKR_HTTPS_URL || ''
+        : process.env.ANKR_POLYGON_HTTPS_URL || '',
   },
   wallet: {
     address: process.env.ADDRESS || '',

@@ -6,7 +6,6 @@ import {
 } from "./contracts";
 
 import { getPoolPrice, getInvertedPrice, tickToPrice } from "./PriceOracle";
-import { get } from "http";
 
 // the PositionTracker class is a singleton
 // it serves as the go-to source of truth for the current position
