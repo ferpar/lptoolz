@@ -38,19 +38,26 @@ export default class LiquidityManager implements ILiquidityManager {
         await this.tracker.updateBalances();
         const price = this.tracker.pool.price;
         const upperPrice = this.tracker.position.priceUpperBound;
-        const stopLossPrice = upperPrice.times(fractionToBottom);
+        const lowerPrice = this.tracker.position.priceLowerBound;
+        const priceDifference = upperPrice.sub(lowerPrice);
+        const stopLossPrice = upperPrice.sub(priceDifference.times(fractionToBottom));
         const belowStopLossPrice = price.lt(stopLossPrice);
+        const token0Balance = this.tracker.position.token0Balance;
+        const token1Balance = this.tracker.position.token1Balance;
     if (options.test) {
         console.log("Current price: ", price.toString());
         console.log("Upper price: ", upperPrice.toString());
         console.log("Stop loss price: ", stopLossPrice.toString());
+        console.log("Bottom price: ", lowerPrice.toString());
         console.log("Current price is below stop loss price: ", belowStopLossPrice);
+        console.log("token0 balance: ", token0Balance.toString());
+        console.log("token1 balance: ", token1Balance.toString());
         return
     }
     if (belowStopLossPrice) {
         console.log("below stop loss price, exiting");
         // TODO: replace with withdrawAndSwapToStablecoin
-        // await this.withdraw();
+        await this.withdraw();
     }
   }
 }
