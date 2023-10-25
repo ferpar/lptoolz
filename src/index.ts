@@ -13,10 +13,24 @@ const positionId = process.env.POSITION_ID
   : 0;
 let positionTracker: IPositionTracker;
 let liquidityManager: ILiquidityManager;
+let isExecuting: boolean = false;
 
 const routine = async () => {
+  // abort if already executing
+  if (isExecuting) {
+    console.log("already executing");
+    return
+  }
+  // prevent concurrent executions
+  isExecuting = true;
   console.log("swap event triggered");
-  await liquidityManager.stopLoss(fractionToBottom, { test: false, inverse: false});
+  try {
+    await liquidityManager.stopLoss(fractionToBottom, { test: false, inverse: false});
+  } catch (e) {
+    console.error("Error running routine", e);
+  }
+  // allow next execution
+  isExecuting = false;
 };
 
 const init = async () => {
@@ -32,8 +46,8 @@ const main = async (): Promise<void> => {
   console.log("Starting...");
 
   await init();
-  await routine();
   console.log("initialized successfully");
+
   // do not close the process
   process.stdin.resume();
 

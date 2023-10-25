@@ -264,12 +264,12 @@ export default class PositionTracker implements IPositionTracker {
     const token1Balance = reservesToken1Wei.mul(Big(10).pow(-this.token1.decimals));
 
     console.table({
-      liquidity: liquidity.toString(),
-      sqrtPrice: sqrtPrice.toString(),
-      sqrtLowerBound: sqrtLowerBound.toString(),
-      sqrtUpperBound: sqrtUpperBound.toString(),
-      reservesToken0Wei: reservesToken0Wei.toString(),
-      reservesToken1Wei: reservesToken1Wei.toString(),
+      // liquidity: liquidity.toString(),
+      // sqrtPrice: sqrtPrice.toString(),
+      // sqrtLowerBound: sqrtLowerBound.toString(),
+      // sqrtUpperBound: sqrtUpperBound.toString(),
+      // reservesToken0Wei: reservesToken0Wei.toString(),
+      // reservesToken1Wei: reservesToken1Wei.toString(),
       token0Balance: token0Balance.toString(),
       token1Balance: token1Balance.toString(),
     })
