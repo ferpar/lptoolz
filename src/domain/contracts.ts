@@ -1,5 +1,6 @@
 import { ethers } from "ethers";
 import dotenv from "dotenv";
+import { WebSocketProvider } from "../libs/WebSocket";
 dotenv.config();
 
 const selectedNetwork = process.env.NETWORK || "ETH-MAINNET";
@@ -7,7 +8,7 @@ const providerUrl =
   selectedNetwork === "ETH-MAINNET"
     ? process.env.ALCHEMY_WSS_URL
     : process.env.ALCHEMY_POLYGON_WSS_URL;
-export const provider = new ethers.providers.WebSocketProvider(
+export const provider = new WebSocketProvider(
   providerUrl || ""
 );
 
