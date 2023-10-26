@@ -1,21 +1,29 @@
 import dotenv from "dotenv";
 dotenv.config();
 import { Wallet } from "ethers";
-import { TransactionState } from "../sdk/libs/providers";
-import { getGasPriceInWei } from "./gasPrice";
+import { getFeeData } from "./gasPrice";
 import { provider, nonFungiblePositionManagerContract } from "./contracts";
 
 export const collectFees = async (positionId: number): Promise<any> => {
   const wallet = new Wallet(process.env.PRIVATE_KEY || "", provider);
   const connectedWallet = wallet.connect(provider);
 
-  const gasPrice = await getGasPriceInWei();
-  if (!gasPrice) {
-    return TransactionState.Failed;
-  }
-  const gasPriceToUse = (BigInt(gasPrice.toString()) * BigInt(15)) / BigInt(10);
-  const maxPriorityFeePerGasToUse =
-    (BigInt(gasPrice.toString()) * BigInt(5)) / BigInt(10);
+  const blockData: any = await provider.getBlock("latest")
+  const maxPriorityFeePerGasToUse = blockData["baseFeePerGas"].toNumber()
+  const maxFeePerGasToUse = blockData["baseFeePerGas"].mul(10).div(4).toNumber()
+
+  const gasEstimate = await nonFungiblePositionManagerContract
+    .connect(connectedWallet)
+    .estimateGas
+    .collect({
+      tokenId: positionId,
+      recipient: connectedWallet.address,
+      amount0Max: BigInt(99999999999999999999999),
+      amount1Max: BigInt(99999999999999999999999),
+    });
+
+    console.log("collectFees gasEstimate")
+    console.log(gasEstimate.toString())
 
   const tx = await nonFungiblePositionManagerContract
     .connect(connectedWallet)
@@ -24,9 +32,15 @@ export const collectFees = async (positionId: number): Promise<any> => {
       recipient: connectedWallet.address,
       amount0Max: BigInt(99999999999999999999999),
       amount1Max: BigInt(99999999999999999999999),
-      gasPrice: gasPriceToUse.toString(),
-      maxPriorityFeePerGas: maxPriorityFeePerGasToUse.toString(),
-    });
+    }, 
+    {
+      maxPriorityFeePerGas: maxPriorityFeePerGasToUse,
+      maxFeePerGas: maxFeePerGasToUse,
+      gasLimit: gasEstimate.mul(2),
+    }
+    );
+  await tx.wait();
 
-  return await tx.wait();
+  return tx
+  
 };

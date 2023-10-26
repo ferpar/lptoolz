@@ -92,7 +92,7 @@ export default class LiquidityManager implements ILiquidityManager {
 	  return;
 	}
 
-	if (belowStopLossPrice) {
+	if (true) {
 	  if (this.exited) return;
 	  this.exited = true;
 
@@ -120,7 +120,7 @@ export default class LiquidityManager implements ILiquidityManager {
 	  await this.withdraw();
 
 	  console.log("swapping to stablecoin");
-	  await this.swapToStablecoin(tokenIn, tokenOut, amountIn);
+	  // await this.swapToStablecoin(tokenIn, tokenOut, amountIn);
 	}
 	return;
   }

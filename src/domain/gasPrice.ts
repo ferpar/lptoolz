@@ -10,3 +10,8 @@ export const getGasPriceInWei = async ():Promise<BigNumber> => {
   const gasPriceRaw = await provider.getGasPrice();
   return gasPriceRaw;
 }
+
+export const getFeeData = async ():Promise<any> => {
+  const feeData = await provider.getFeeData();
+  return feeData;
+}
