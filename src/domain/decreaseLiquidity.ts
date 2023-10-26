@@ -3,11 +3,6 @@ dotenv.config();
 import { Wallet, ethers } from "ethers";
 import { provider, nonFungiblePositionManagerContract } from "./contracts";
 
-export const getGasPrice = async (): Promise<number> => {
-  const gasPrice = await provider.getFeeData();
-  return Number(gasPrice.toString());
-};
-
 export const decreaseLiquidity = async (positionId: number, all: boolean = false): Promise<any> => {
   const wallet = new Wallet(process.env.PRIVATE_KEY || "", provider);
   const connectedWallet = wallet.connect(provider);
