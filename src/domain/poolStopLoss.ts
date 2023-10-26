@@ -10,7 +10,6 @@ import {
 import { decreaseLiquidity } from "../domain/decreaseLiquidity";
 import { collectFees } from "../domain/collectFees";
 
-import { getGasPrice } from "../domain/gasPrice";
 import { executeSwap } from "../sdk/libs/routing";
 
 const poolStopLoss = async (

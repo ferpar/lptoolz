@@ -25,7 +25,7 @@ export default class LiquidityManager implements ILiquidityManager {
   public async withdraw(): Promise<void> {
 	const positionId = this.tracker.position.positionId;
 	console.log("calling decreaseLiquidity for positionId", positionId);
-	const receipt = await decreaseLiquidity(positionId, true); // true means 100% of liquidity
+	const receipt = await decreaseLiquidity(positionId, false); // true means 100% of liquidity, false 50%
 	const feesReceipt = await collectFees(positionId);
 	console.log("decreaseLiquidity tx ", receipt);
 	console.log("collectFees tx ", feesReceipt);
@@ -77,8 +77,8 @@ export default class LiquidityManager implements ILiquidityManager {
 	console.log("Stop loss price: ", stopLossPrice.toString());
 	console.log("Bottom price: ", lowerPrice.toString());
 	console.log("Current price is below stop loss price: ", belowStopLossPrice);
-	// console.log("token0 balance: ", token0Balance.toString());
-	// console.log("token1 balance: ", token1Balance.toString());
+	console.log("token0 balance: ", token0Balance.toString());
+	console.log("token1 balance: ", token1Balance.toString());
 	console.log("token0 symbol: ", token0Symbol);
 	console.log("token1 symbol: ", token1Symbol);
 	console.log(

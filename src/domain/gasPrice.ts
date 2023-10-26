@@ -10,8 +10,3 @@ export const getGasPriceInWei = async ():Promise<BigNumber> => {
   const gasPriceRaw = await provider.getGasPrice();
   return gasPriceRaw;
 }
-
-export const getGasPrice = async (): Promise<string> => {
-  const gasPrice = ethers.utils.formatUnits(await getGasPriceInWei(), "gwei");
-  return gasPrice;
-};
