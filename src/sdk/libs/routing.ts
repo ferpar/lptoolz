@@ -20,12 +20,11 @@ import {
   getProvider,
 } from "./providers";
 import {
-  MAX_FEE_PER_GAS,
-  MAX_PRIORITY_FEE_PER_GAS,
   ERC20_ABI,
   TOKEN_AMOUNT_TO_APPROVE_FOR_TRANSFER,
   V3_SWAP_ROUTER_ADDRESS,
 } from "./constants";
+import { getTransactionFees } from "../../domain/getTransactionFees";
 import { fromReadableAmount } from "./conversion";
 import { ethers } from "ethers";
 import { getGasPriceInWei } from "../../domain/gasPrice";
@@ -94,22 +93,17 @@ export async function executeRoute(
     return TransactionState.Failed;
   }
 
-  console.log("getting gas price");
-  const gasPrice = await getGasPriceInWei();
-  if (!gasPrice) {
-    return TransactionState.Failed;
-  }
-  const gasPriceToUse = (BigInt(gasPrice.toString()) * BigInt(15)) / BigInt(10);
-  const maxPriorityFeePerGasToUse =
-    (BigInt(gasPrice.toString()) * BigInt(5)) / BigInt(10);
+  const {
+    maxPriorityFeePerGasToUse,
+    maxFeePerGasToUse
+  } = await getTransactionFees();
 
-  console.log("sending transaction", gasPriceToUse.toString());
   const res = await sendTransaction({
     data: route.methodParameters?.calldata,
     to: V3_SWAP_ROUTER_ADDRESS,
     value: route?.methodParameters?.value,
     from: walletAddress,
-    maxFeePerGas: gasPriceToUse.toString(),
+    maxFeePerGas: maxFeePerGasToUse.toString(),
     maxPriorityFeePerGas: maxPriorityFeePerGasToUse.toString(),
   });
 
@@ -129,7 +123,7 @@ export async function executeSwap(
     return TransactionState.Failed;
   }
   console.log("creating route");
-  const route = await generateRoute();
+  const route = await generateRoute(tokenIn, tokenOut, amountIn);
   if (!route) {
     return TransactionState.Failed;
   }

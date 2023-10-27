@@ -1,16 +1,17 @@
 import dotenv from "dotenv";
 dotenv.config();
 import { Wallet } from "ethers";
-import { getFeeData } from "./gasPrice";
+import { getTransactionFees } from "./getTransactionFees";
 import { provider, nonFungiblePositionManagerContract } from "./contracts";
 
 export const collectFees = async (positionId: number): Promise<any> => {
   const wallet = new Wallet(process.env.PRIVATE_KEY || "", provider);
   const connectedWallet = wallet.connect(provider);
 
-  const blockData: any = await provider.getBlock("latest")
-  const maxPriorityFeePerGasToUse = blockData["baseFeePerGas"].toNumber()
-  const maxFeePerGasToUse = blockData["baseFeePerGas"].mul(10).div(4).toNumber()
+  const {
+    maxPriorityFeePerGasToUse,
+    maxFeePerGasToUse
+  } = await getTransactionFees();
 
   const gasEstimate = await nonFungiblePositionManagerContract
     .connect(connectedWallet)
