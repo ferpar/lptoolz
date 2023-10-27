@@ -92,7 +92,7 @@ export default class LiquidityManager implements ILiquidityManager {
 	  return;
 	}
 
-	if (true) {
+	if (belowStopLossPrice) {
 	  if (this.exited) return;
 	  this.exited = true;
 

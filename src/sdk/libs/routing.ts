@@ -10,6 +10,7 @@ import {
   Percent,
   SUPPORTED_CHAINS,
   Token,
+  ChainId,
 } from "@uniswap/sdk-core";
 import { CurrentConfig } from "../config";
 import {
@@ -27,7 +28,7 @@ import {
 import { getTransactionFees } from "../../domain/getTransactionFees";
 import { fromReadableAmount } from "./conversion";
 import { ethers } from "ethers";
-import { getGasPriceInWei } from "../../domain/gasPrice";
+import { selectedNetwork } from "../../domain/contracts";
 
 export async function generateRoute(
   tokenIn?: Token,
@@ -35,7 +36,7 @@ export async function generateRoute(
   amountIn?: number
 ): Promise<SwapRoute | null> {
   const router = new AlphaRouter({
-    chainId: SUPPORTED_CHAINS[0],
+    chainId: selectedNetwork === "ETH-MAINNET" ? ChainId.MAINNET : ChainId.POLYGON,
     provider: getMainnetProvider(),
   });
 
@@ -103,8 +104,8 @@ export async function executeRoute(
     to: V3_SWAP_ROUTER_ADDRESS,
     value: route?.methodParameters?.value,
     from: walletAddress,
-    maxFeePerGas: maxFeePerGasToUse.toString(),
-    maxPriorityFeePerGas: maxPriorityFeePerGasToUse.toString(),
+    maxFeePerGas: maxFeePerGasToUse,
+    maxPriorityFeePerGas: maxPriorityFeePerGasToUse,
   });
 
   return res;

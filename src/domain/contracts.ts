@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 import { WebSocketProvider } from "../libs/WebSocket";
 dotenv.config();
 
-const selectedNetwork = process.env.NETWORK || "ETH-MAINNET";
+export const selectedNetwork = process.env.NETWORK || "ETH-MAINNET";
 const providerUrl =
   selectedNetwork === "ETH-MAINNET"
     ? process.env.ALCHEMY_WSS_URL

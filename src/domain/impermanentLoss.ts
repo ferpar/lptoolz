@@ -29,3 +29,23 @@ function imperLossBelowStablecoin(
 ): number {
   return imperLoss(ratioBelow, 1, intervalRatioBelow, 1);
 }
+
+// assuming that you are only using stablecoins and setting
+// ranges below the current price
+function lossEstimation(high: number, low: number, fraction: number): object {
+  const stopLoss = high - (high - low) * fraction;
+  const impLoss = imperLoss(stopLoss, high, low, high);
+  const rangeFraction = (high - low) / high;
+
+  const estimates = {
+    stopLoss,
+    impLoss,
+    impLossPercent: impLoss * 100,
+    impLoss1000: impLoss * 1000,
+    impLoss5000: impLoss * 5000,
+    rangeFraction,
+    rangePercent: rangeFraction * 100,
+  };
+
+  return estimates;
+}

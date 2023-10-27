@@ -19,13 +19,16 @@ const routine = async () => {
   // abort if already executing
   if (isExecuting) {
     console.log("already executing");
-    return
+    return;
   }
   // prevent concurrent executions
   isExecuting = true;
   console.log("swap event triggered");
   try {
-    await liquidityManager.stopLoss(fractionToBottom, { test: false, inverse: false});
+    await liquidityManager.stopLoss(fractionToBottom, {
+      test: false,
+      inverse: false,
+    });
   } catch (e) {
     console.error("Error running routine", e);
   }
@@ -35,7 +38,7 @@ const routine = async () => {
 
 const init = async () => {
   positionTracker = await PositionTracker.getInstance(positionId);
-  liquidityManager = new LiquidityManager(positionTracker);  
+  liquidityManager = new LiquidityManager(positionTracker);
 
   uniswapV3PoolContract.on("Swap", async (sender, amount0, amount1, data) => {
     await routine();
