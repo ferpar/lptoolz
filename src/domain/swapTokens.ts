@@ -79,7 +79,7 @@ export const swapTokens = async (
   // get permission to spend tokens
   const approveTx = await tokenInContract
     .connect(connectedWallet)
-    .approve(swapRouterContract.address, amountInFormatted.mul(2), options);
+    .approve(swapRouterContract.address, amountInFormatted, options);
 
   await approveTx.wait();
 
@@ -92,7 +92,7 @@ export const swapTokens = async (
     deadline: Math.floor(Date.now() / 1000) + 60 * 10,
     amountIn: amountInFormatted,
     amountOutMinimum: 0,
-    sqrtPriceLimitX96: sqrtPriceX96,
+    sqrtPriceLimitX96: 0,
   };
 
 
