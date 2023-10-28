@@ -24,6 +24,10 @@ const nonFungiblePositionManagerAbi = require("@uniswap/v3-periphery/artifacts/c
 // get contract for erc20
 export const erc20Abi = require("@uniswap/v3-periphery/artifacts/contracts/interfaces/IERC20Metadata.sol/IERC20Metadata.json");
 
+// swap router 
+const swapRouterAddress = process.env.SWAP_ROUTER_ADDRESS || "";
+const swapRouterAbi = require("@uniswap/v3-periphery/artifacts/contracts/interfaces/ISwapRouter.sol/ISwapRouter.json");
+
 export const uniswapV3PoolContract = new ethers.Contract(
   UniV3PoolAddress,
   uniswapV3PoolAbi.abi,
@@ -35,6 +39,12 @@ export const nonFungiblePositionManagerContract = new ethers.Contract(
   nonFungiblePositionManagerAbi.abi,
   provider
 ) as any;
+
+export const swapRouterContract = new ethers.Contract(
+  swapRouterAddress,
+  swapRouterAbi.abi,
+  provider
+);
 
 const getTokensFromPool = async () => {
   const [token0Address, token1Address] = await Promise.all([
@@ -58,3 +68,20 @@ export const getTokenContracts = async () => {
   );
   return [token0Contract, token1Contract];
 };
+
+export const getTokenContract = (tokenAddress: string) => {
+  return new ethers.Contract(
+    tokenAddress,
+    erc20Abi.abi,
+    provider
+  );
+}
+
+export const getPoolContract = async (poolAddress: string) => {
+  return new ethers.Contract(
+    poolAddress,
+    uniswapV3PoolAbi.abi,
+    provider
+  );
+}
+
