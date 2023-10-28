@@ -5,6 +5,7 @@ import { uniswapV3PoolContract } from "./domain/contracts";
 
 import PositionTracker, { IPositionTracker } from "./domain/PositionTracker";
 import LiquidityManager, { ILiquidityManager } from "./domain/LiquidityManager";
+import { swapTokens } from "./domain/swapTokens";
 
 // safe fraction to bottom of 0.6 in case FRACTION_TO_BOTTOM is not set
 const fractionToBottom = Number(process.env.FRACTION_TO_BOTTOM) || 0.6;
@@ -40,8 +41,21 @@ const init = async () => {
   positionTracker = await PositionTracker.getInstance(positionId);
   liquidityManager = new LiquidityManager(positionTracker);
 
+  const wmaticAddress = "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270"
+  const usdcAddress = "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"
+
+  console.log("before swapTokens")
+  const swapReceipt = await swapTokens(
+    wmaticAddress,
+    usdcAddress,
+    500,
+    10
+  )
+
+  console.log(swapReceipt)
+
   uniswapV3PoolContract.on("Swap", async (sender, amount0, amount1, data) => {
-    await routine();
+    // await routine();
   });
 };
 

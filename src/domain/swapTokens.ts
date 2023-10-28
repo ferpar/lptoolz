@@ -1,16 +1,17 @@
 import dotenv from "dotenv";
 dotenv.config();
-import ethers, { Wallet, BigNumber } from "ethers";
-import { getTransactionFees } from "./getTransactionFees";
-import { provider, selectedNetwork } from "./contracts";
+import { Wallet, BigNumber } from "ethers";
+import { Token } from "@uniswap/sdk-core";
+import { ChainId } from "@uniswap/sdk-core";
 import {
+  provider,
+  selectedNetwork,
   swapRouterContract,
   getTokenContract,
   getPoolContract,
 } from "./contracts";
-import { Token } from "@uniswap/sdk-core";
 import { getPoolAddress } from "./getPoolAddress";
-import { ChainId } from "@uniswap/sdk-core";
+import { getTransactionFees } from "./getTransactionFees";
 
 export const swapTokens = async (
   tokenInAddress: string,
@@ -18,6 +19,7 @@ export const swapTokens = async (
   fee: number,
   amountIn: number
 ): Promise<any> => {
+  console.log("swapTokens start");
   const network =
     selectedNetwork === "ETH-MAINNET" ? ChainId.MAINNET : ChainId.POLYGON;
 
@@ -33,6 +35,8 @@ export const swapTokens = async (
   const tokenOutSymbol = await tokenOutContract.symbol();
   const tokenInName = await tokenInContract.name();
   const tokenOutName = await tokenOutContract.name();
+
+  console.log("got token info");
 
   const TokenIn = new Token(
     network,
@@ -50,20 +54,32 @@ export const swapTokens = async (
     tokenOutName
   );
 
-  const poolAddress = await getPoolAddress(TokenIn, TokenOut, fee);
+  console.log("before getPoolAddress");
+  const poolAddress = await getPoolAddress(TokenIn.address, TokenOut.address, fee);
 
+  console.log("getting pool contract")
   const poolContract = await getPoolContract(poolAddress);
   const { sqrtPriceX96, tick } = await poolContract.slot0();
 
-  const amountInFormatted = ethers.utils.parseUnits(
-    amountIn.toString(),
-    tokenInDecimals
+  const amountInFormatted = BigNumber.from(amountIn.toString()).mul(
+    BigNumber.from(10).pow(tokenInDecimals)
   );
 
+  console.log("before getTransactionFees");
+  const { maxPriorityFeePerGasToUse, maxFeePerGasToUse } =
+    await getTransactionFees();
+
+  const options = {
+    gasLimit: BigNumber.from("300000"),
+    maxPriorityFeePerGas: maxPriorityFeePerGasToUse,
+    maxFeePerGas: maxFeePerGasToUse,
+  };
+
+  console.log("before approve");
   // get permission to spend tokens
   const approveTx = await tokenInContract
     .connect(connectedWallet)
-    .approve(swapRouterContract.address, amountInFormatted);
+    .approve(swapRouterContract.address, amountInFormatted.mul(2), options);
 
   await approveTx.wait();
 
@@ -79,17 +95,8 @@ export const swapTokens = async (
     sqrtPriceLimitX96: sqrtPriceX96,
   };
 
-  const {
-    maxPriorityFeePerGasToUse,
-    maxFeePerGasToUse
-  } = await getTransactionFees();
 
-  const options = {
-    gasLimit: BigNumber.from("300000"),
-    maxPriorityFeePerGas: maxPriorityFeePerGasToUse,
-    maxFeePerGas: maxFeePerGasToUse,
-  }
-
+  console.log("before Swap");
   // swap
   const tx = await swapRouterContract
     .connect(connectedWallet)

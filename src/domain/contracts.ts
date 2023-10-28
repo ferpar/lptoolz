@@ -28,6 +28,10 @@ export const erc20Abi = require("@uniswap/v3-periphery/artifacts/contracts/inter
 const swapRouterAddress = process.env.SWAP_ROUTER_ADDRESS || "";
 const swapRouterAbi = require("@uniswap/v3-periphery/artifacts/contracts/interfaces/ISwapRouter.sol/ISwapRouter.json");
 
+// uniswap v3 factory
+const uniswapV3FactoryAddress = process.env.FACTORY_ADDRESS || "";
+const uniswapV3FactoryAbi = require("@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Factory.sol/IUniswapV3Factory.json");
+
 export const uniswapV3PoolContract = new ethers.Contract(
   UniV3PoolAddress,
   uniswapV3PoolAbi.abi,
@@ -43,6 +47,13 @@ export const nonFungiblePositionManagerContract = new ethers.Contract(
 export const swapRouterContract = new ethers.Contract(
   swapRouterAddress,
   swapRouterAbi.abi,
+  provider
+);
+
+// used for retrieving pool addresses given tokenA tokenB and fee
+export const uniswapV3FactoryContract = new ethers.Contract(
+  uniswapV3FactoryAddress,
+  uniswapV3FactoryAbi.abi,
   provider
 );
 
@@ -70,11 +81,12 @@ export const getTokenContracts = async () => {
 };
 
 export const getTokenContract = (tokenAddress: string) => {
-  return new ethers.Contract(
+  const tokenContract = new ethers.Contract(    
     tokenAddress,
     erc20Abi.abi,
     provider
   );
+  return tokenContract;
 }
 
 export const getPoolContract = async (poolAddress: string) => {
