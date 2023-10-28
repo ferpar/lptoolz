@@ -106,6 +106,7 @@ export async function executeRoute(
     from: walletAddress,
     maxFeePerGas: maxFeePerGasToUse,
     maxPriorityFeePerGas: maxPriorityFeePerGasToUse,
+    gasLimit: 300000
   });
 
   return res;

@@ -44,8 +44,8 @@ export const CurrentConfig: ExampleConfig = {
     local: process.env.LOCAL_RPC_URL || '',
     mainnet:
       process.env.NETWORK === "ETH-MAINNET" 
-        ? process.env.ANKR_HTTPS_URL || ''
-        : process.env.ANKR_POLYGON_HTTPS_URL || '',
+        ? process.env.ALCHEMY_HTTPS_URL || ''
+        : process.env.ALCHEMY_POLYGON_HTTPS_URL || '',
   },
   wallet: {
     address: process.env.ADDRESS || '',
