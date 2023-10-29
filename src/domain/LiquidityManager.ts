@@ -108,6 +108,13 @@ export default class LiquidityManager implements ILiquidityManager {
       await this.withdraw();
 
       console.log("swapping to stablecoin");
+			console.log("Arguments to swapTokens:")
+			console.log({
+				tokenInAddress: tokenIn.address,
+				tokenOutAddress: tokenOut.address,
+				fee: Number(this.tracker.position.fee),
+				amountIn: amountIn.toNumber(),
+			})
       const swapReceipt = await swapTokens(
         tokenIn.address,
         tokenOut.address,

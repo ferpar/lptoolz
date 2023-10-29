@@ -66,7 +66,26 @@ export const swapTokens = async (
   const poolContract = await getPoolContract(poolAddress);
   const { sqrtPriceX96, tick } = await poolContract.slot0();
 
-  const amountInFormatted = BigNumber.from(fromReadableAmount(amountIn, tokenInDecimals).toString())
+  let amountInFormatted = BigNumber.from(
+    fromReadableAmount(amountIn, tokenInDecimals).toString()
+  );
+
+  // get tokenIn balance and make sure amountIn is less than balance
+  // if amountIn > balance, use balance instead
+  const tokenInBalance = await tokenInContract.balanceOf(
+    connectedWallet.address
+  );
+
+  console.log("amountInFormatted ", amountInFormatted.toString());
+  console.log("tokenInBalance ", tokenInBalance.toString());
+  console.log(
+    "amountIn exceeds balance: ",
+    amountInFormatted.gt(tokenInBalance)
+  );
+
+  if (amountInFormatted.gt(tokenInBalance)) {
+    amountInFormatted = tokenInBalance;
+  }
 
   console.log("before getTransactionFees");
   const { maxPriorityFeePerGasToUse, maxFeePerGasToUse } =
