@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 dotenv.config();
-import { Wallet } from "ethers";
+import { Wallet, BigNumber } from "ethers";
 import { getTransactionFees } from "./getTransactionFees";
 import { provider, nonFungiblePositionManagerContract } from "./contracts";
 
@@ -13,18 +13,18 @@ export const collectFees = async (positionId: number): Promise<any> => {
     maxFeePerGasToUse
   } = await getTransactionFees();
 
-  const gasEstimate = await nonFungiblePositionManagerContract
-    .connect(connectedWallet)
-    .estimateGas
-    .collect({
-      tokenId: positionId,
-      recipient: connectedWallet.address,
-      amount0Max: BigInt(99999999999999999999999),
-      amount1Max: BigInt(99999999999999999999999),
-    });
+  // const gasEstimate = await nonFungiblePositionManagerContract
+  //   .connect(connectedWallet)
+  //   .estimateGas
+  //   .collect({
+  //     tokenId: positionId,
+  //     recipient: connectedWallet.address,
+  //     amount0Max: BigInt(99999999999999999999999),
+  //     amount1Max: BigInt(99999999999999999999999),
+  //   });
 
-    console.log("collectFees gasEstimate")
-    console.log(gasEstimate.toString())
+  //   console.log("collectFees gasEstimate")
+  //   console.log(gasEstimate.toString())
 
   const tx = await nonFungiblePositionManagerContract
     .connect(connectedWallet)
@@ -37,7 +37,7 @@ export const collectFees = async (positionId: number): Promise<any> => {
     {
       maxPriorityFeePerGas: maxPriorityFeePerGasToUse,
       maxFeePerGas: maxFeePerGasToUse,
-      gasLimit: gasEstimate.mul(2),
+      gasLimit: BigNumber.from("600000")
     }
     );
   await tx.wait();

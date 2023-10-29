@@ -12,6 +12,7 @@ import {
 } from "./contracts";
 import { getPoolAddress } from "./getPoolAddress";
 import { getTransactionFees } from "./getTransactionFees";
+import { fromReadableAmount } from "../sdk/libs/conversion";
 
 export const swapTokens = async (
   tokenInAddress: string,
@@ -55,15 +56,17 @@ export const swapTokens = async (
   );
 
   console.log("before getPoolAddress");
-  const poolAddress = await getPoolAddress(TokenIn.address, TokenOut.address, fee);
+  const poolAddress = await getPoolAddress(
+    TokenIn.address,
+    TokenOut.address,
+    fee
+  );
 
-  console.log("getting pool contract")
+  console.log("getting pool contract");
   const poolContract = await getPoolContract(poolAddress);
   const { sqrtPriceX96, tick } = await poolContract.slot0();
 
-  const amountInFormatted = BigNumber.from(amountIn.toString()).mul(
-    BigNumber.from(10).pow(tokenInDecimals)
-  );
+  const amountInFormatted = BigNumber.from(fromReadableAmount(amountIn, tokenInDecimals).toString())
 
   console.log("before getTransactionFees");
   const { maxPriorityFeePerGasToUse, maxFeePerGasToUse } =
@@ -94,7 +97,6 @@ export const swapTokens = async (
     amountOutMinimum: 0,
     sqrtPriceLimitX96: 0,
   };
-
 
   console.log("before Swap");
   // swap

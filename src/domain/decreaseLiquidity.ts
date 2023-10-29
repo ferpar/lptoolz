@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 dotenv.config();
-import { Wallet } from "ethers";
+import { Wallet, BigNumber } from "ethers";
 import { getTransactionFees } from "./getTransactionFees";
 import { provider, nonFungiblePositionManagerContract } from "./contracts";
 
@@ -33,22 +33,22 @@ export const decreaseLiquidity = async (
     maxFeePerGasToUse
   } = await getTransactionFees();
 
-  const gasEstimate = await nonFungiblePositionManagerContract
-    .connect(connectedWallet)
-    .estimateGas
-    .decreaseLiquidity(params, {
-      maxPriorityFeePerGas: maxPriorityFeePerGasToUse,
-      maxFeePerGas: maxFeePerGasToUse
-    });
+  // const gasEstimate = await nonFungiblePositionManagerContract
+  //   .connect(connectedWallet)
+  //   .estimateGas
+  //   .decreaseLiquidity(params, {
+  //     maxPriorityFeePerGas: maxPriorityFeePerGasToUse,
+  //     maxFeePerGas: maxFeePerGasToUse
+  //   });
 
-    console.log("decreaseLiquidity gasEstimate")
-    console.log(gasEstimate.toString())
+  //   console.log("decreaseLiquidity gasEstimate")
+  //   console.log(gasEstimate.toString())
 
   const tx = await nonFungiblePositionManagerContract
     .connect(connectedWallet)
     .decreaseLiquidity(params, 
       {
-      gasLimit: gasEstimate.mul(3),
+      gasLimit: BigNumber.from("600000"),
       maxPriorityFeePerGas: maxPriorityFeePerGasToUse,
       maxFeePerGas: maxFeePerGasToUse
     }
