@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "npx tsc && node ./build/index.js"
+    "start": "npx tsc && node ./build/index.js",
+    "runpm2": "npx tsc && pm2 start ./build/index.js --name lptoolz"
   },
   "author": "Fernando Perez Ayala",
   "license": "ISC",
