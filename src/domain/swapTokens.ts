@@ -117,6 +117,9 @@ export const swapTokens = async (
     sqrtPriceLimitX96: 0,
   };
 
+  console.log("swap params:")
+  console.table(params);
+
   console.log("before Swap");
   // swap
   const tx = await swapRouterContract
