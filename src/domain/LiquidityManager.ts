@@ -3,8 +3,6 @@ dotenv.config();
 import { IPositionTracker } from "./PositionTracker";
 import { decreaseLiquidity } from "./decreaseLiquidity";
 import { collectFees } from "./collectFees";
-import { ChainId, Token } from "@uniswap/sdk-core";
-import { executeSwap } from "../sdk/libs/routing";
 import { swapTokens } from "./swapTokens";
 export interface ILiquidityManager {
   withdraw(proportion?: number): Promise<void>;
@@ -38,13 +36,6 @@ export default class LiquidityManager implements ILiquidityManager {
       inverse: false,
     }
   ): Promise<void> {
-    // get network for swap
-    let network;
-    if (process.env.NETWORK === "ETH-MAINNET") {
-      network = ChainId.MAINNET;
-    } else {
-      network = ChainId.POLYGON;
-    }
 
     await this.tracker.updateBalances();
     const price = this.tracker.pool.price;
@@ -80,45 +71,46 @@ export default class LiquidityManager implements ILiquidityManager {
       return;
     }
 
-
     if (belowStopLossPrice) {
       if (this.exited) return;
       this.exited = true;
 
-      const token0 = new Token(
-        network,
-        this.tracker.token0.address,
-        this.tracker.token0.decimals,
-        token0Symbol,
-        this.tracker.token0.name
-      );
-      const token1 = new Token(
-        network,
-        this.tracker.token1.address,
-        this.tracker.token1.decimals,
-        token1Symbol,
-        this.tracker.token1.name
-      );
-      const tokenIn = options.inverse ? token1 : token0;
-      const tokenOut = options.inverse ? token0 : token1;
+      const tokenInAddress = options.inverse
+        ? this.tracker.token1.address
+        : this.tracker.token0.address;
+      const tokenOutAddress = options.inverse
+        ? this.tracker.token0.address
+        : this.tracker.token1.address;
+
       const amountIn = options.inverse ? token1Balance : token0Balance;
+
 
       console.log("below stop loss price, exiting position");
 
       console.log("withdrawing liquidity");
       await this.withdraw();
 
+
+
       console.log("swapping to stablecoin");
-			console.log("Arguments to swapTokens:")
-			console.log({
-				tokenInAddress: tokenIn.address,
-				tokenOutAddress: tokenOut.address,
-				fee: Number(this.tracker.position.fee),
-				amountIn: amountIn.toNumber(),
-			})
+
+      console.log("Arguments to swapTokens:");
+      console.log({
+        tokenInAddress: tokenInAddress,
+        tokenOutAddress: tokenOutAddress,
+        fee: Number(this.tracker.position.fee),
+        amountIn: amountIn.toNumber(),
+      });
+
+      // handle case where amountIn is 0
+      if (amountIn.eq(0)) {
+        console.log("amountIn is 0, aborting swap before error");
+        return
+      }
+
       const swapReceipt = await swapTokens(
-        tokenIn.address,
-        tokenOut.address,
+        tokenInAddress,
+        tokenOutAddress,
         Number(this.tracker.position.fee),
         amountIn.toNumber()
       );
