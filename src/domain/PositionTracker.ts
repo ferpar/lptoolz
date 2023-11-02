@@ -19,6 +19,8 @@ export interface IPositionTracker {
     price: Big;
     invertedPrice: Big;
     tick: number;
+    token0Address: string;
+    token1Address: string;
   };
   position: {
     positionId: number;
@@ -32,6 +34,8 @@ export interface IPositionTracker {
     priceUpperBoundInverted: Big;
     token0Balance: Big;
     token1Balance: Big;
+    token0Address: string;
+    token1Address: string;
   };
   token0: {
     address: string;
@@ -47,7 +51,6 @@ export interface IPositionTracker {
   };
 
   updateBalances(): Promise<void>;
-
 }
 
 export default class PositionTracker implements IPositionTracker {
@@ -60,11 +63,15 @@ export default class PositionTracker implements IPositionTracker {
     price: Big; // price in terms of token1 per token0
     invertedPrice: Big; // price in terms of token0 per token1
     tick: number;
+    token0Address: string;
+    token1Address: string;
   } = {
     sqrtRatioX96: "",
     price: Big(0),
     invertedPrice: Big(0),
     tick: 0,
+    token0Address: "",
+    token1Address: "",
   };
   position: {
     positionId: number;
@@ -78,6 +85,8 @@ export default class PositionTracker implements IPositionTracker {
     priceUpperBoundInverted: Big;
     token0Balance: Big;
     token1Balance: Big;
+    token0Address: string;
+    token1Address: string;
   } = {
     positionId: 0,
     tickLower: 0,
@@ -89,7 +98,9 @@ export default class PositionTracker implements IPositionTracker {
     priceLowerBoundInverted: Big(0),
     priceUpperBoundInverted: Big(0),
     token0Balance: Big(0),
-    token1Balance: Big(0)
+    token1Balance: Big(0),
+    token0Address: "",
+    token1Address: "",
   };
   token0: { address: string; decimals: number; symbol: string; name: string } =
     {
@@ -140,7 +151,6 @@ export default class PositionTracker implements IPositionTracker {
     await this.loadPositionData(this.position.positionId);
     await this.derivePoolPrices();
     this.deriveTokenBalances();
-
   }
 
   private loadPoolData = async () => {
@@ -173,11 +183,11 @@ export default class PositionTracker implements IPositionTracker {
       tickUpper,
       fee,
       liquidity,
+      token0Address,
+      token1Address,
     }; // const gasPrice = await getGasPrice();
     // console.log("gasPrice: " + gasPrice + " gwei")
     this.position = { ...this.position, ...positionData };
-    this.token0.address = token0Address;
-    this.token1.address = token1Address;
 
     return positionData;
   };
@@ -186,6 +196,8 @@ export default class PositionTracker implements IPositionTracker {
   private loadTokenData = async () => {
     console.log("loading token data");
     const [token0Contract, token1Contract] = await getTokenContracts();
+    const token0Address = token0Contract.address;
+    const token1Address = token1Contract.address;
     const token0Decimals = await token0Contract.decimals();
     const token1Decimals = await token1Contract.decimals();
     const token0Symbol = await token0Contract.symbol();
@@ -194,12 +206,14 @@ export default class PositionTracker implements IPositionTracker {
     const token1Name = await token1Contract.name();
 
     const token0Data = {
+      address: token0Address,
       decimals: token0Decimals,
       symbol: token0Symbol,
       name: token0Name,
     };
 
     const token1Data = {
+      address: token1Address,
       decimals: token1Decimals,
       symbol: token1Symbol,
       name: token1Name,
@@ -207,6 +221,11 @@ export default class PositionTracker implements IPositionTracker {
 
     this.token0 = { ...this.token0, ...token0Data };
     this.token1 = { ...this.token1, ...token1Data };
+
+    // setting tokens of pool contract here to avoid calling the api repeatedly
+    this.pool.token0Address = token0Address;
+    this.pool.token1Address = token1Address;
+
     return [token0Data, token1Data];
   };
 
@@ -243,7 +262,7 @@ export default class PositionTracker implements IPositionTracker {
       priceLowerBound,
       priceUpperBound,
       priceLowerBoundInverted,
-      priceUpperBoundInverted
+      priceUpperBoundInverted,
     };
   };
 
@@ -253,7 +272,7 @@ export default class PositionTracker implements IPositionTracker {
     const lowerBoundWei = Big(Math.pow(1.0001, this.position.tickLower));
     const upperBoundWei = Big(Math.pow(1.0001, this.position.tickUpper));
 
-    let priceForReserves 
+    let priceForReserves;
     if (priceWei.gt(upperBoundWei)) {
       priceForReserves = upperBoundWei;
     } else if (priceWei.lt(lowerBoundWei)) {
@@ -261,21 +280,27 @@ export default class PositionTracker implements IPositionTracker {
     } else {
       priceForReserves = priceWei;
     }
-      
+
     const sqrtPrice = priceForReserves.sqrt();
     const sqrtLowerBound = lowerBoundWei.sqrt();
     const sqrtUpperBound = upperBoundWei.sqrt();
 
     // in terms of token1
     // known as x
-    const reservesToken0Wei = liquidity.mul(Big(sqrtUpperBound.sub(sqrtPrice)).div(sqrtPrice.mul(sqrtUpperBound)))
+    const reservesToken0Wei = liquidity.mul(
+      Big(sqrtUpperBound.sub(sqrtPrice)).div(sqrtPrice.mul(sqrtUpperBound))
+    );
     // in terms of token0
     // known as y
-    const reservesToken1Wei = liquidity.mul((sqrtPrice.sub(sqrtLowerBound)))
+    const reservesToken1Wei = liquidity.mul(sqrtPrice.sub(sqrtLowerBound));
     ////
 
-    const token0Balance = reservesToken0Wei.mul(Big(10).pow(-this.token0.decimals));
-    const token1Balance = reservesToken1Wei.mul(Big(10).pow(-this.token1.decimals));
+    const token0Balance = reservesToken0Wei.mul(
+      Big(10).pow(-this.token0.decimals)
+    );
+    const token1Balance = reservesToken1Wei.mul(
+      Big(10).pow(-this.token1.decimals)
+    );
 
     console.table({
       // liquidity: liquidity.toString(),
@@ -286,7 +311,7 @@ export default class PositionTracker implements IPositionTracker {
       // reservesToken1Wei: reservesToken1Wei.toString(),
       token0Balance: token0Balance.toString(),
       token1Balance: token1Balance.toString(),
-    })
+    });
 
     this.position.token0Balance = token0Balance;
     this.position.token1Balance = token1Balance;

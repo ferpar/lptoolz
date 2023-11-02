@@ -29,6 +29,23 @@ export default class LiquidityManager implements ILiquidityManager {
     console.log("collectFees tx ", feesReceipt);
   }
 
+  // check if tokens are the same in pool and position contracts
+  checkTokens(): true {
+    const poolToken0Address = this.tracker.pool.token0Address;
+    const poolToken1Address = this.tracker.pool.token1Address;
+    const positionToken0Address = this.tracker.position.token0Address;
+    const positionToken1Address = this.tracker.position.token1Address;
+    if (
+      poolToken0Address !== positionToken0Address ||
+      poolToken1Address !== positionToken1Address
+    ) {
+      throw new Error(
+        "DIFFERENT TOKENS IN POOL AND POSITION CONTRACTS, PLEASE CHECK POOL ADDRESS AND POSITION ID"
+      );
+    }
+    return true;
+  }
+
   public async manage(
     fractionToBottom: number = 0.6,
     options: { test: boolean; inverse: boolean } = {
@@ -36,27 +53,29 @@ export default class LiquidityManager implements ILiquidityManager {
       inverse: false,
     }
   ): Promise<void> {
-
     // update tracker
     await this.tracker.updateBalances();
 
+    // check token coherence
+    this.checkTokens();
+
     // define basic prices
-    const price = options.inverse 
-    ? this.tracker.pool.invertedPrice
-    : this.tracker.pool.price;
-    const upperPrice = options.inverse 
-    ? this.tracker.position.priceLowerBoundInverted
-    : this.tracker.position.priceUpperBound;
-    const lowerPrice = options.inverse 
-    ? this.tracker.position.priceUpperBoundInverted
-    : this.tracker.position.priceLowerBound;
+    const price = options.inverse
+      ? this.tracker.pool.invertedPrice
+      : this.tracker.pool.price;
+    const upperPrice = options.inverse
+      ? this.tracker.position.priceLowerBoundInverted
+      : this.tracker.position.priceUpperBound;
+    const lowerPrice = options.inverse
+      ? this.tracker.position.priceUpperBoundInverted
+      : this.tracker.position.priceLowerBound;
 
     // derive stop loss price
     const priceDifference = upperPrice.sub(lowerPrice);
     const stopLossPrice = upperPrice.sub(
       priceDifference.times(fractionToBottom)
     );
-    
+
     // check if current price is below stop loss price
     const belowStopLossPrice = price.lt(stopLossPrice);
 
@@ -103,13 +122,10 @@ export default class LiquidityManager implements ILiquidityManager {
 
       const amountIn = options.inverse ? token1Balance : token0Balance;
 
-
       console.log("below stop loss price, exiting position");
 
       console.log("withdrawing liquidity");
       await this.withdraw();
-
-
 
       console.log("swapping to stablecoin");
 
@@ -124,7 +140,7 @@ export default class LiquidityManager implements ILiquidityManager {
       // handle case where amountIn is 0
       if (amountIn.eq(0)) {
         console.log("amountIn is 0, aborting swap before error");
-        return
+        return;
       }
 
       const swapReceipt = await swapTokens(
