@@ -5,8 +5,6 @@ import { uniswapV3PoolContract } from "./domain/contracts";
 
 import PositionTracker, { IPositionTracker } from "./domain/PositionTracker";
 import LiquidityManager, { ILiquidityManager } from "./domain/LiquidityManager";
-import { swapTokens } from "./domain/swapTokens";
-import { getTokenContract } from "./domain/contracts";
 
 // safe fraction to bottom of 0.6 in case FRACTION_TO_BOTTOM is not set
 const fractionToBottom = Number(process.env.FRACTION_TO_BOTTOM) || 0.6;
@@ -27,7 +25,7 @@ const routine = async () => {
   isExecuting = true;
   console.log("swap event triggered");
   try {
-    await liquidityManager.stopLoss(fractionToBottom, {
+    await liquidityManager.manage(fractionToBottom, {
       test: false,
       inverse: false,
     });

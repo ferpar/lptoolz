@@ -6,7 +6,7 @@ import { collectFees } from "./collectFees";
 import { swapTokens } from "./swapTokens";
 export interface ILiquidityManager {
   withdraw(proportion?: number): Promise<void>;
-  stopLoss(
+  manage(
     fractionToBottom: number,
     options: { test: boolean; inverse: boolean }
   ): Promise<void>;
@@ -29,7 +29,7 @@ export default class LiquidityManager implements ILiquidityManager {
     console.log("collectFees tx ", feesReceipt);
   }
 
-  public async stopLoss(
+  public async manage(
     fractionToBottom: number = 0.6,
     options: { test: boolean; inverse: boolean } = {
       test: false,
