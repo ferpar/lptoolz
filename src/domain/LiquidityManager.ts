@@ -30,7 +30,7 @@ export default class LiquidityManager implements ILiquidityManager {
   }
 
   // check if tokens are the same in pool and position contracts
-  checkTokens(): true {
+  checkTokens(): boolean {
     const poolToken0Address = this.tracker.pool.token0Address;
     const poolToken1Address = this.tracker.pool.token1Address;
     const positionToken0Address = this.tracker.position.token0Address;
@@ -42,6 +42,25 @@ export default class LiquidityManager implements ILiquidityManager {
       throw new Error(
         "DIFFERENT TOKENS IN POOL AND POSITION CONTRACTS, PLEASE CHECK POOL ADDRESS AND POSITION ID"
       );
+    }
+    return true;
+  }
+
+  // check if token1Addess is USDC
+  checkUSDCQuote(inverse: boolean): boolean {
+    const network = process.env.NETWORK;
+    // DANGER: we assume if it is not polygon, it is ethereum
+    // this needs to be updated if we add more networks
+    const USDCAddress =
+      network === "POLYGON"
+        ? "0x2791bca1f2de4661ed88a30c99a7a9449aa84174"
+        : "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48";
+    const token1Address = this.tracker.position.token1Address;
+    if (token1Address !== USDCAddress) {
+      if (!inverse) {
+        console.log("TOKEN1ADDRESS IS NOT USDC, SET INVERSE TO TRUE");
+      }
+      return false;
     }
     return true;
   }
@@ -58,15 +77,20 @@ export default class LiquidityManager implements ILiquidityManager {
 
     // check token coherence
     this.checkTokens();
+    // check if token1 is USDC
+    const isUSDCQuote = this.checkUSDCQuote(options.inverse);
+
+    // extract option for further use
+    const inverseMode = options.inverse;
 
     // define basic prices
-    const price = options.inverse
+    const price = inverseMode
       ? this.tracker.pool.invertedPrice
       : this.tracker.pool.price;
-    const upperPrice = options.inverse
+    const upperPrice = inverseMode
       ? this.tracker.position.priceLowerBoundInverted
       : this.tracker.position.priceUpperBound;
-    const lowerPrice = options.inverse
+    const lowerPrice = inverseMode
       ? this.tracker.position.priceUpperBoundInverted
       : this.tracker.position.priceLowerBound;
 
@@ -86,7 +110,7 @@ export default class LiquidityManager implements ILiquidityManager {
     const token1Symbol = this.tracker.token1.symbol;
 
     // log everything
-    if (options.inverse) {
+    if (inverseMode) {
       console.log("Inverse mode");
     }
     console.log("Current price: ", price.toString());
@@ -98,7 +122,7 @@ export default class LiquidityManager implements ILiquidityManager {
     console.log("token1 balance: ", token1Balance.toString());
     console.log("token0 symbol: ", token0Symbol);
     console.log("token1 symbol: ", token1Symbol);
-    const swapExplanation = options.inverse
+    const swapExplanation = inverseMode
       ? `if below stop loss, swap ${token1Symbol} back to ${token0Symbol}`
       : `if below stop loss, swap ${token0Symbol} back to ${token1Symbol}`;
     console.log(swapExplanation);
@@ -113,14 +137,14 @@ export default class LiquidityManager implements ILiquidityManager {
       if (this.exited) return;
       this.exited = true;
 
-      const tokenInAddress = options.inverse
+      const tokenInAddress = inverseMode
         ? this.tracker.token1.address
         : this.tracker.token0.address;
-      const tokenOutAddress = options.inverse
+      const tokenOutAddress = inverseMode
         ? this.tracker.token0.address
         : this.tracker.token1.address;
 
-      const amountIn = options.inverse ? token1Balance : token0Balance;
+      const amountIn = inverseMode ? token1Balance : token0Balance;
 
       console.log("below stop loss price, exiting position");
 
