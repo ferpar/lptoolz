@@ -26,8 +26,8 @@ const routine = async () => {
   console.log("swap event triggered");
   try {
     await liquidityManager.manage(fractionToBottom, {
-      test: false,
-      inverse: false,
+      test: true,
+      inverse: true,
     });
   } catch (e) {
     console.error("Error running routine", e);

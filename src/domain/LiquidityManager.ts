@@ -32,7 +32,7 @@ export default class LiquidityManager implements ILiquidityManager {
   public async manage(
     fractionToBottom: number = 0.6,
     options: { test: boolean; inverse: boolean } = {
-      test: false,
+      test: true,
       inverse: false,
     }
   ): Promise<void> {
@@ -41,9 +41,15 @@ export default class LiquidityManager implements ILiquidityManager {
     await this.tracker.updateBalances();
 
     // define basic prices
-    const price = this.tracker.pool.price;
-    const upperPrice = this.tracker.position.priceUpperBound;
-    const lowerPrice = this.tracker.position.priceLowerBound;
+    const price = options.inverse 
+    ? this.tracker.pool.invertedPrice
+    : this.tracker.pool.price;
+    const upperPrice = options.inverse 
+    ? this.tracker.position.priceLowerBoundInverted
+    : this.tracker.position.priceUpperBound;
+    const lowerPrice = options.inverse 
+    ? this.tracker.position.priceUpperBoundInverted
+    : this.tracker.position.priceLowerBound;
 
     // derive stop loss price
     const priceDifference = upperPrice.sub(lowerPrice);
@@ -61,6 +67,9 @@ export default class LiquidityManager implements ILiquidityManager {
     const token1Symbol = this.tracker.token1.symbol;
 
     // log everything
+    if (options.inverse) {
+      console.log("Inverse mode");
+    }
     console.log("Current price: ", price.toString());
     console.log("Upper price: ", upperPrice.toString());
     console.log("Stop loss price: ", stopLossPrice.toString());
