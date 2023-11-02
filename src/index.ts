@@ -27,7 +27,8 @@ const routine = async () => {
   try {
     await liquidityManager.manage(fractionToBottom, {
       test: true,
-      inverse: true,
+      inverse: false,
+      autoUSDCQuote: true,
     });
   } catch (e) {
     console.error("Error running routine", e);

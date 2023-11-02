@@ -8,7 +8,7 @@ export interface ILiquidityManager {
   withdraw(proportion?: number): Promise<void>;
   manage(
     fractionToBottom: number,
-    options: { test: boolean; inverse: boolean }
+    options: { test: boolean; inverse: boolean; autoUSDCQuote: boolean }
   ): Promise<void>;
 }
 
@@ -47,7 +47,10 @@ export default class LiquidityManager implements ILiquidityManager {
   }
 
   // check if token1Addess is USDC
-  checkUSDCQuote(inverse: boolean): boolean {
+  checkUSDCQuote(
+    inverse: boolean,
+    autoUSDCQuote: boolean | undefined
+  ): boolean {
     const network = process.env.NETWORK;
     // DANGER: we assume if it is not polygon, it is ethereum
     // this needs to be updated if we add more networks
@@ -56,8 +59,18 @@ export default class LiquidityManager implements ILiquidityManager {
         ? "0x2791bca1f2de4661ed88a30c99a7a9449aa84174"
         : "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48";
     const token1Address = this.tracker.position.token1Address;
-    if (token1Address !== USDCAddress) {
-      if (!inverse) {
+    const token0Address = this.tracker.position.token0Address;
+    // to lower case to avoid issues with checksum / capitals
+    if (token1Address.toLowerCase() !== USDCAddress.toLowerCase()) {
+
+      if (token0Address.toLowerCase() !== USDCAddress.toLowerCase()) {
+        if (autoUSDCQuote){
+        throw new Error("NO USDC IN POSITION, CHECK POSITION OR SET AUTOUSDCQUOTE TO FALSE");
+        }
+        return false;
+      }
+
+      if (!inverse && !autoUSDCQuote) {
         console.log("TOKEN1ADDRESS IS NOT USDC, SET INVERSE TO TRUE");
       }
       return false;
@@ -65,11 +78,16 @@ export default class LiquidityManager implements ILiquidityManager {
     return true;
   }
 
+  // fractionToBottom: fraction of the price range from topPrice to exitPrice
+  // test: if true, will not withdraw or swap
+  // inverse: if true, will use inverted price
+  // autoUSDCQuote: if true, will check if token1 is USDC and set inverse to true if it is not
   public async manage(
     fractionToBottom: number = 0.6,
-    options: { test: boolean; inverse: boolean } = {
+    options: { test: boolean; inverse: boolean; autoUSDCQuote: boolean } = {
       test: true,
       inverse: false,
+      autoUSDCQuote: true,
     }
   ): Promise<void> {
     // update tracker
@@ -78,10 +96,13 @@ export default class LiquidityManager implements ILiquidityManager {
     // check token coherence
     this.checkTokens();
     // check if token1 is USDC
-    const isUSDCQuote = this.checkUSDCQuote(options.inverse);
+    const isUSDCQuote = this.checkUSDCQuote(
+      options.inverse,
+      options.autoUSDCQuote
+    );
 
     // extract option for further use
-    const inverseMode = options.inverse;
+    const inverseMode = options.autoUSDCQuote ? !isUSDCQuote : options.inverse;
 
     // define basic prices
     const price = inverseMode
