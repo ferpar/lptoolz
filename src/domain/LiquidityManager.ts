@@ -37,20 +37,30 @@ export default class LiquidityManager implements ILiquidityManager {
     }
   ): Promise<void> {
 
+    // update tracker
     await this.tracker.updateBalances();
+
+    // define basic prices
     const price = this.tracker.pool.price;
     const upperPrice = this.tracker.position.priceUpperBound;
     const lowerPrice = this.tracker.position.priceLowerBound;
+
+    // derive stop loss price
     const priceDifference = upperPrice.sub(lowerPrice);
     const stopLossPrice = upperPrice.sub(
       priceDifference.times(fractionToBottom)
     );
+    
+    // check if current price is below stop loss price
     const belowStopLossPrice = price.lt(stopLossPrice);
+
+    // get balances and symbols
     const token0Balance = this.tracker.position.token0Balance;
     const token1Balance = this.tracker.position.token1Balance;
     const token0Symbol = this.tracker.token0.symbol;
     const token1Symbol = this.tracker.token1.symbol;
 
+    // log everything
     console.log("Current price: ", price.toString());
     console.log("Upper price: ", upperPrice.toString());
     console.log("Stop loss price: ", stopLossPrice.toString());
@@ -66,8 +76,8 @@ export default class LiquidityManager implements ILiquidityManager {
     console.log(swapExplanation);
     console.log("test mode: ", options.test);
 
+    // if it is a test, exit without withdrawing / swapping
     if (options.test) {
-      // if it is a test, exit without withdrawing / swapping
       return;
     }
 

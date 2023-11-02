@@ -28,6 +28,8 @@ export interface IPositionTracker {
     liquidity: Big;
     priceLowerBound: Big;
     priceUpperBound: Big;
+    priceLowerBoundInverted: Big;
+    priceUpperBoundInverted: Big;
     token0Balance: Big;
     token1Balance: Big;
   };
@@ -72,6 +74,8 @@ export default class PositionTracker implements IPositionTracker {
     liquidity: Big;
     priceLowerBound: Big;
     priceUpperBound: Big;
+    priceLowerBoundInverted: Big;
+    priceUpperBoundInverted: Big;
     token0Balance: Big;
     token1Balance: Big;
   } = {
@@ -82,6 +86,8 @@ export default class PositionTracker implements IPositionTracker {
     liquidity: Big(0),
     priceLowerBound: Big(0),
     priceUpperBound: Big(0),
+    priceLowerBoundInverted: Big(0),
+    priceUpperBoundInverted: Big(0),
     token0Balance: Big(0),
     token1Balance: Big(0)
   };
@@ -211,6 +217,7 @@ export default class PositionTracker implements IPositionTracker {
     ]);
 
     const priceInverted = await getInvertedPrice(price);
+
     const priceLowerBound = await tickToPrice(String(this.position.tickLower), [
       this.token0.decimals,
       this.token1.decimals,
@@ -220,16 +227,23 @@ export default class PositionTracker implements IPositionTracker {
       this.token1.decimals,
     ]);
 
+    const priceLowerBoundInverted = await getInvertedPrice(priceLowerBound);
+    const priceUpperBoundInverted = await getInvertedPrice(priceUpperBound);
+
     this.pool.price = price;
     this.pool.invertedPrice = priceInverted;
     this.position.priceLowerBound = priceLowerBound;
     this.position.priceUpperBound = priceUpperBound;
+    this.position.priceLowerBoundInverted = priceLowerBoundInverted;
+    this.position.priceUpperBoundInverted = priceUpperBoundInverted;
 
     return {
       price,
       priceInverted,
       priceLowerBound,
-      priceUpperBound
+      priceUpperBound,
+      priceLowerBoundInverted,
+      priceUpperBoundInverted
     };
   };
 
