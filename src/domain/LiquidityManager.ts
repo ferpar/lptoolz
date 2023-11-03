@@ -158,6 +158,11 @@ export default class LiquidityManager implements ILiquidityManager {
       if (this.exited) return;
       this.exited = true;
 
+      console.log("below stop loss price, exiting position");
+
+      console.log("withdrawing liquidity");
+      await this.withdraw();
+
       const tokenInAddress = inverseMode
         ? this.tracker.token1.address
         : this.tracker.token0.address;
@@ -166,11 +171,6 @@ export default class LiquidityManager implements ILiquidityManager {
         : this.tracker.token1.address;
 
       const amountIn = inverseMode ? token1Balance : token0Balance;
-
-      console.log("below stop loss price, exiting position");
-
-      console.log("withdrawing liquidity");
-      await this.withdraw();
 
       console.log("swapping to stablecoin");
 
