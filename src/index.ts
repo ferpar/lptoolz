@@ -6,8 +6,8 @@ import { uniswapV3PoolContract } from "./domain/contracts";
 import PositionTracker, { IPositionTracker } from "./domain/PositionTracker";
 import LiquidityManager, { ILiquidityManager } from "./domain/LiquidityManager";
 
-// safe fraction to bottom of 0.6 in case FRACTION_TO_BOTTOM is not set
-const fractionToBottom = Number(process.env.FRACTION_TO_BOTTOM) || 0.6;
+// defaul fraction to bottom of 0.4 in case FRACTION_TO_BOTTOM is not set
+const fractionToExit = Number(process.env.FRACTION_TO_BOTTOM) || 0.4;
 const positionId = process.env.POSITION_ID
   ? Number(process.env.POSITION_ID)
   : 0;
@@ -25,10 +25,11 @@ const routine = async () => {
   isExecuting = true;
   console.log("swap event triggered");
   try {
-    await liquidityManager.manage(fractionToBottom, {
-      test: true,
+    await liquidityManager.manage(fractionToExit, {
+      test: false,
       inverse: false,
       autoUSDCQuote: true,
+      counterDump: false,
     });
   } catch (e) {
     console.error("Error running routine", e);

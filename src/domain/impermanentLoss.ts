@@ -32,7 +32,16 @@ function imperLossBelowStablecoin(
 
 // assuming that you are only using stablecoins and setting
 // ranges below the current price
-export function lossEstimation(high: number, low: number, fraction: number): object {
+type LossEstimate = {
+  stopLoss: number;
+  impLoss: number;
+  impLossPercent: number;
+  impLoss1000: number;
+  impLoss5000: number;
+  rangeFraction: number;
+  rangePercent: number;
+}
+export function lossEstimation(high: number, low: number, fraction: number): LossEstimate {
   const stopLoss = high - (high - low) * fraction;
   const impLoss = imperLoss(stopLoss, high, low, high);
   const rangeFraction = (high - low) / high;
